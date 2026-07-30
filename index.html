@@ -1966,11 +1966,11 @@
     }
 
     table {
-      min-width: 980px;
+      min-width: 1280px;
     }
 
     .table-scroll.show-advanced-columns table {
-      min-width: 1360px;
+      min-width: 1410px;
     }
 
     th,
@@ -2118,6 +2118,87 @@
       box-shadow: 0 8px 26px rgba(0, 0, 0, .07);
     }
 
+    .subscription-panel {
+      display: none;
+      margin-top: 22px;
+      overflow: hidden;
+    }
+
+    .subscription-panel.is-visible {
+      display: block;
+    }
+
+    .subscription-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      padding: 16px 20px 20px;
+    }
+
+    .subscription-card {
+      display: flex;
+      min-width: 0;
+      padding: 16px;
+      flex-direction: column;
+      gap: 10px;
+      background: #fafafa;
+      border: 1px solid var(--slate-200);
+      border-radius: 16px;
+    }
+
+    .subscription-card-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .subscription-mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      place-items: center;
+      color: var(--blue-700);
+      background: var(--blue-100);
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .subscription-card h3 {
+      margin: 0;
+      color: #1d1d1f;
+      font-size: 15px;
+      font-weight: 650;
+    }
+
+    .subscription-match {
+      margin: 0;
+      color: var(--slate-600);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .subscription-steps {
+      margin: 0;
+      color: #1d1d1f;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .subscription-link {
+      align-self: flex-start;
+      margin-top: auto;
+      color: var(--blue-600);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .subscription-link:hover {
+      text-decoration: underline;
+    }
+
     .accounting-mail-panel {
       border: 0;
     }
@@ -2137,12 +2218,40 @@
       box-shadow: 0 0 0 3px rgba(0, 113, 227, .1);
     }
 
-    .floating-export {
+    .floating-export-group {
+      position: fixed;
       right: max(24px, calc((100vw - 1220px) / 2));
       bottom: 22px;
-      min-height: 50px;
+      z-index: 25;
+      display: none;
+      gap: 8px;
+      padding: 7px;
+      background: rgba(255, 255, 255, .88);
+      border: 1px solid rgba(0, 0, 0, .08);
       border-radius: 999px;
-      box-shadow: 0 14px 34px rgba(0, 113, 227, .22);
+      box-shadow: 0 14px 36px rgba(0, 0, 0, .13);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+    }
+
+    .floating-export-group.is-visible {
+      display: flex;
+    }
+
+    .floating-export-group .btn {
+      min-height: 44px;
+    }
+
+    .excel-export {
+      color: var(--white);
+      background: var(--green-600);
+      border-color: var(--green-600);
+    }
+
+    .excel-export:hover:not(:disabled) {
+      color: var(--white);
+      background: var(--green-700);
+      border-color: var(--green-700);
     }
 
     @media (max-width: 900px) {
@@ -2258,11 +2367,21 @@
         padding: 16px;
       }
 
-      .floating-export {
+      .floating-export-group {
         right: 12px;
         bottom: 14px;
         left: 12px;
         width: calc(100% - 24px);
+        display: none;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .floating-export-group.is-visible {
+        display: grid;
+      }
+
+      .floating-export-group .btn {
+        width: 100%;
       }
     }
 
@@ -2455,7 +2574,7 @@
             <div class="toolbar-menu">
               <label class="column-toggle">
                 <input id="advancedColumnsToggle" type="checkbox">
-                顯示入帳日與原幣欄位
+                顯示入帳日
               </label>
               <button class="btn btn-quiet" id="rawButton" type="button">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -2477,8 +2596,8 @@
             <col class="advanced-column" style="width:130px">
             <col style="width:300px">
             <col style="width:125px">
-            <col class="advanced-column" style="width:105px">
-            <col class="advanced-column" style="width:135px">
+            <col style="width:105px">
+            <col style="width:135px">
             <col style="width:230px">
             <col style="width:104px">
           </colgroup>
@@ -2495,8 +2614,8 @@
               <th class="advanced-column">入帳日</th>
               <th>商店／說明</th>
               <th style="text-align:right">台幣金額</th>
-              <th class="advanced-column">原幣幣別</th>
-              <th class="advanced-column" style="text-align:right">原幣金額</th>
+              <th>原幣幣別</th>
+              <th style="text-align:right">原幣金額</th>
               <th>備註</th>
               <th>夾檔</th>
             </tr>
@@ -2520,6 +2639,17 @@
           新增一筆
         </button>
       </div>
+    </section>
+
+    <section class="surface subscription-panel" id="subscriptionPanel" aria-label="訂閱發票捷徑">
+      <div class="review-head">
+        <div>
+          <h2>這些可能是訂閱</h2>
+          <p>依帳單店家自動顯示對應的發票入口，只列出本期有出現的服務。</p>
+        </div>
+        <span class="review-count" id="subscriptionCount">0 個捷徑</span>
+      </div>
+      <div class="subscription-grid" id="subscriptionGrid"></div>
     </section>
 
     <section class="surface review-panel" id="reviewPanel" aria-label="附件複查區">
@@ -2581,13 +2711,14 @@
     </section>
   </main>
 
-  <button class="btn btn-primary floating-export" id="exportButton" type="button" disabled>
-    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 3h10l4 4v14H5V3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-      <path d="M15 3v4h4M8 11l5 6M13 11l-5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-    </svg>
-    匯出整理包
-  </button>
+  <div class="floating-export-group" id="exportActions">
+    <button class="btn excel-export" id="excelExportButton" type="button" disabled>
+      下載 Excel
+    </button>
+    <button class="btn btn-primary" id="exportButton" type="button" disabled>
+      下載發票 ZIP
+    </button>
+  </div>
 
   <dialog id="rawDialog">
     <div class="dialog-head">
@@ -2656,6 +2787,116 @@
         PH: "PHP",
         NZ: "NZD"
       };
+      const SUBSCRIPTION_GUIDES = [
+        {
+          name: "GoDaddy 網域",
+          aliases: ["GODADDY"],
+          steps: "Account Settings → 歷史訂單記錄 → 下載收據",
+          url: "https://account.godaddy.com/receipts"
+        },
+        {
+          name: "LINE 官方帳號",
+          aliases: ["LINE OFFICIAL", "LINE BUSINESS", "LINE@PAYMENT", "LINE BIZ", "LINE PAY"],
+          steps: "LINE 官方帳號後台 → 帳務專區 → 付款紀錄",
+          url: "https://manager.line.biz/"
+        },
+        {
+          name: "Freepik 圖庫",
+          aliases: ["FREEPIK"],
+          steps: "帳號選單 → 計費紀錄 → 下載發票",
+          url: "https://zh.freepik.com/user/my-subscriptions#from-element=dropdown_menu"
+        },
+        {
+          name: "Adobe 授權",
+          aliases: ["ADOBE"],
+          steps: "Admin Console → 帳戶和帳單 → 檢視帳單記錄",
+          url: "https://adminconsole.adobe.com/"
+        },
+        {
+          name: "Creati AI／ZMO.AI",
+          aliases: ["ZMO.AI", "ZMO AI", "CREATI AI"],
+          steps: "登入後選擇 Upgrade → Select Plan → 帳單紀錄",
+          url: "https://www.zmo.ai/"
+        },
+        {
+          name: "ChatGPT 個人版",
+          aliases: ["CHATGPT", "OPENAI"],
+          steps: "設定 → 帳戶 → 付款管理 → 下載收據",
+          url: "https://chatgpt.com/#settings/Account"
+        },
+        {
+          name: "ChatGPT 商務版",
+          aliases: ["CHATGPT BUSINESS", "CHATGPT TEAM"],
+          steps: "管理後台 → Billing → Invoices",
+          url: "https://chatgpt.com/admin/billing?tab=invoices"
+        },
+        {
+          name: "Helium 10",
+          aliases: ["HELIUM 10", "H10 FOLLOW-UP", "PIXEL LABS"],
+          steps: "Account → Billing → 查看歷史帳單",
+          url: "https://members.helium10.com/account/billing"
+        },
+        {
+          name: "Microsoft 365／Copilot／Visio",
+          aliases: ["MICROSOFT", "MSFT", "OFFICE 365", "COPILOT", "VISIO"],
+          steps: "管理中心 → 計費 → 帳單與付款 → 選擇發票下載。Copilot 常用續訂日 9/24；Visio 9/4。",
+          url: "https://admin.microsoft.com/#/billoverview/invoice-list"
+        },
+        {
+          name: "Gamma 簡報 AI",
+          aliases: ["GAMMA.APP", "GAMMA APP", "GAMMA AI"],
+          steps: "帳號設定 → Billing → 在 Stripe 中管理訂閱。常用續訂日：每年 1/7。",
+          url: "https://gamma.app/settings"
+        },
+        {
+          name: "RangeMe 電子型錄",
+          aliases: ["RANGEME"],
+          steps: "右上角頭像 → Settings → Subscription → Manage → Billing History",
+          url: "https://app.rangeme.com/"
+        },
+        {
+          name: "Claude",
+          aliases: ["CLAUDE", "ANTHROPIC"],
+          steps: "Admin Settings → Billing → 下載發票。常用續訂日：每年 4/14。",
+          url: "https://claude.ai/admin-settings/billing"
+        },
+        {
+          name: "Canva",
+          aliases: ["CANVA"],
+          steps: "帳號設定 → Billing & plans → 查看收據。常用續訂日：每年 8/15。",
+          url: "https://www.canva.com/settings/billing-and-plans"
+        },
+        {
+          name: "Deevid",
+          aliases: ["DEEVID"],
+          steps: "登入帳號後前往訂閱／Billing 頁面查看收據。常用續訂日：7/14。",
+          url: "https://deevid.ai/"
+        },
+        {
+          name: "SuperZoo 展覽",
+          aliases: ["SUPERZOO", "SUPER ZOO", "WPA"],
+          steps: "My Account → Orders／Payments → 下載費用收據",
+          url: "https://s23.a2zinc.net/clients/wpa/sz2026/Public/e_MyAccount.aspx?"
+        },
+        {
+          name: "APPA／Global Pet Expo",
+          aliases: ["APPA", "GLOBAL PET EXPO"],
+          steps: "到 Expo 信箱搜尋「Order Receipt - Global Pet Expo」",
+          url: ""
+        },
+        {
+          name: "Amazon 結算費用",
+          aliases: ["AMAZON", "AMZN", "SELLER CENTRAL"],
+          steps: "付款 → 所有結算 → 找日期與金額 → 檢視摘要 → 列印結算",
+          url: "https://sellercentral-japan.amazon.com/payments/past-settlements"
+        },
+        {
+          name: "Agoda",
+          aliases: ["AGODA"],
+          steps: "旅程 → 所有訂單 → 管理預訂 → 索取電子收據",
+          url: "https://www.agoda.com/zh-tw/trips"
+        }
+      ];
 
       const $ = (selector, root = document) => root.querySelector(selector);
       const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -2697,7 +2938,12 @@
         cancelRawButton: $("#cancelRawButton"),
         reparseButton: $("#reparseButton"),
         addRowButton: $("#addRowButton"),
+        exportActions: $("#exportActions"),
+        excelExportButton: $("#excelExportButton"),
         exportButton: $("#exportButton"),
+        subscriptionPanel: $("#subscriptionPanel"),
+        subscriptionCount: $("#subscriptionCount"),
+        subscriptionGrid: $("#subscriptionGrid"),
         reviewPanel: $("#reviewPanel"),
         reviewCount: $("#reviewCount"),
         receiptDropZone: $("#receiptDropZone"),
@@ -3346,6 +3592,63 @@
           .replace(/'/g, "&#039;");
       }
 
+      function subscriptionGuideMatchesRow(guide, row) {
+        const text = normalizeMatchText(`${row.description || ""} ${row.note || ""}`);
+        if (!text) return false;
+        if (
+          guide.name === "ChatGPT 個人版" &&
+          (text.includes("BUSINESS") || text.includes("TEAM"))
+        ) {
+          return false;
+        }
+        return guide.aliases.some((alias) => text.includes(normalizeMatchText(alias)));
+      }
+
+      function getSubscriptionMatches(rows = state.rows) {
+        return SUBSCRIPTION_GUIDES
+          .map((guide) => ({
+            guide,
+            rows: rows.filter((row) => subscriptionGuideMatchesRow(guide, row))
+          }))
+          .filter((item) => item.rows.length > 0);
+      }
+
+      function subscriptionRowText(row) {
+        const hasForeign = row.foreignAmount !== "" &&
+          row.foreignAmount !== null &&
+          row.foreignAmount !== undefined &&
+          Number.isFinite(Number(row.foreignAmount));
+        const foreign = hasForeign
+          ? `・${formatDecimal(row.foreignAmount)} ${row.currency || "原幣"}`
+          : "";
+        return `${slashDate(row.transactionDate) || "未填日期"}・${row.description || "未填商店"}・NT$${formatInteger(row.amount || 0)}${foreign}`;
+      }
+
+      function renderSubscriptionGuides() {
+        const matches = getSubscriptionMatches();
+        dom.subscriptionPanel.classList.toggle("is-visible", matches.length > 0);
+        dom.subscriptionCount.textContent = `${matches.length} 個捷徑`;
+        dom.subscriptionGrid.innerHTML = matches.map(({ guide, rows }) => {
+          const rowText = rows.slice(0, 3)
+            .map((row) => escapeHtml(subscriptionRowText(row)))
+            .join("<br>");
+          const more = rows.length > 3 ? `<br>另有 ${rows.length - 3} 筆` : "";
+          const link = guide.url
+            ? `<a class="subscription-link" href="${escapeHtml(guide.url)}" target="_blank" rel="noopener noreferrer">前往找發票 →</a>`
+            : `<span class="subscription-link">請依上方步驟查找</span>`;
+          return `
+            <article class="subscription-card">
+              <div class="subscription-card-head">
+                <span class="subscription-mark" aria-hidden="true">${escapeHtml(guide.name.slice(0, 1))}</span>
+                <h3>${escapeHtml(guide.name)}</h3>
+              </div>
+              <p class="subscription-match">${rowText}${more}</p>
+              <p class="subscription-steps">${escapeHtml(guide.steps)}</p>
+              ${link}
+            </article>`;
+        }).join("");
+      }
+
       function attachmentCountForRow(rowId) {
         return state.attachments.filter((item) => item.rowId === rowId).length;
       }
@@ -3789,10 +4092,10 @@
             <td>
               <input class="cell-input amount" data-field="amount" data-number="integer" inputmode="numeric" value="${escapeHtml(formatInteger(row.amount))}" aria-label="台幣金額">
             </td>
-            <td class="advanced-column">
+            <td>
               <input class="cell-input" data-field="currency" type="text" maxlength="3" value="${escapeHtml(row.currency || "")}" placeholder="TWD" aria-label="原幣幣別">
             </td>
-            <td class="advanced-column">
+            <td>
               <input class="cell-input amount" data-field="foreignAmount" data-number="decimal" inputmode="decimal" value="${escapeHtml(formatDecimal(row.foreignAmount))}" aria-label="原幣金額">
             </td>
             <td>
@@ -3835,12 +4138,18 @@
         dom.tableScroll.classList.toggle("show-advanced-columns", state.showAdvancedColumns);
         dom.advancedColumnsToggle.checked = state.showAdvancedColumns;
         dom.workspace.classList.toggle("is-visible", state.rows.length > 0);
-        dom.exportButton.classList.toggle("is-visible", state.rows.length > 0);
-        dom.exportButton.disabled = state.rows.length === 0 || state.busy || state.attachmentProcessing;
+        dom.exportActions.classList.toggle("is-visible", state.rows.length > 0);
+        dom.excelExportButton.disabled = state.rows.length === 0 || state.busy;
+        dom.exportButton.disabled =
+          state.rows.length === 0 ||
+          state.attachments.length === 0 ||
+          state.busy ||
+          state.attachmentProcessing;
 
         dom.checkAll.checked = state.rows.length > 0 && counts.found === state.rows.length;
         dom.checkAll.indeterminate = counts.found > 0 && counts.found < state.rows.length;
         dom.checkAll.disabled = state.rows.length === 0;
+        renderSubscriptionGuides();
         renderReview();
         renderAccountingMail();
 
@@ -3861,7 +4170,12 @@
         dom.recognizeButton.disabled = isBusy || state.files.length === 0;
         dom.changeFileButton.disabled = isBusy;
         dom.statementYear.disabled = isBusy;
-        dom.exportButton.disabled = isBusy || state.attachmentProcessing || state.rows.length === 0;
+        dom.excelExportButton.disabled = isBusy || state.rows.length === 0;
+        dom.exportButton.disabled =
+          isBusy ||
+          state.attachmentProcessing ||
+          state.rows.length === 0 ||
+          state.attachments.length === 0;
         dom.recognizeButton.lastChild.textContent = isBusy ? " 辨識中…" : " 開始辨識";
       }
 
@@ -4125,6 +4439,7 @@
         dom.allCount.textContent = `(${state.rows.length})`;
         dom.missingCount.textContent = `(${counts.missing})`;
         dom.foundCount.textContent = `(${counts.found})`;
+        renderSubscriptionGuides();
         renderAccountingMail();
       }
 
@@ -4262,115 +4577,148 @@
         toast(copied ? "給會計的通知已複製" : "文字已選取，請按 ⌘C 複製");
       }
 
-      async function exportPackage() {
+      function exportMonth() {
+        const firstDate = state.rows.map((row) => row.transactionDate).filter(Boolean).sort()[0] ||
+          `${state.statementYear}-01-01`;
+        return firstDate.slice(0, 7);
+      }
+
+      function createExcelWorkbook(XLSX) {
+        const counts = getCounts();
+        const namedAttachments = buildAttachmentNames();
+        const detailRows = [
+          [
+            "發票狀態",
+            "發票類型",
+            "消費日期",
+            "入帳日期",
+            "商店／說明",
+            "台幣金額",
+            "原幣幣別",
+            "原幣金額",
+            "卡號末四碼",
+            "備註",
+            "附件檔名"
+          ],
+          ...state.rows.map((row) => [
+            row.invoiceFound ? "已找到" : "尚未找到",
+            row.physicalInvoice ? "實體發票" : (attachmentCountForRow(row.id) ? "電子附件" : ""),
+            slashDate(row.transactionDate),
+            slashDate(row.postingDate),
+            row.description,
+            Number(row.amount || 0),
+            row.currency || "",
+            row.foreignAmount === "" ? "" : Number(row.foreignAmount),
+            CARD_TAIL,
+            row.note || "",
+            namedAttachments
+              .filter((item) => item.rowId === row.id)
+              .map((item) => item.exportName)
+              .join("、")
+          ])
+        ];
+        const summaryRows = [
+          ["公司卡報帳整理摘要", ""],
+          ["卡號末四碼", CARD_TAIL],
+          ["帳單年度", state.statementYear],
+          ["實際消費筆數", state.rows.length],
+          ["實際報帳金額", counts.total],
+          ["發票已找到", counts.found],
+          ["實體發票", counts.physical],
+          ["尚缺發票", counts.missing],
+          ["附件數量", state.attachments.length],
+          ["已排除國外交易手續費", `${counts.fees.length} 筆`],
+          ["已排除現金回饋", `${counts.cashback.length} 筆`],
+          ["產生時間", new Date().toLocaleString("zh-TW", { hour12: false })],
+          ["來源圖片", state.files.map((file) => file.name).join("、") || "手動資料"]
+        ];
+
+        const detailSheet = XLSX.utils.aoa_to_sheet(detailRows);
+        detailSheet["!cols"] = [
+          { wch: 12 },
+          { wch: 12 },
+          { wch: 13 },
+          { wch: 13 },
+          { wch: 34 },
+          { wch: 14 },
+          { wch: 12 },
+          { wch: 15 },
+          { wch: 13 },
+          { wch: 30 },
+          { wch: 54 }
+        ];
+        detailSheet["!autofilter"] = { ref: `A1:K${detailRows.length}` };
+
+        const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+        summarySheet["!cols"] = [{ wch: 28 }, { wch: 42 }];
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, detailSheet, "報帳明細");
+        XLSX.utils.book_append_sheet(workbook, summarySheet, "核對摘要");
+        return {
+          workbook,
+          filename: safeFilename(`公司卡2388_${exportMonth()}_${Math.round(counts.total)}元`) + ".xlsx"
+        };
+      }
+
+      async function downloadExcel() {
         if (!state.rows.length) return;
-        dom.exportButton.disabled = true;
+        dom.excelExportButton.disabled = true;
+        dom.excelExportButton.textContent = "產生 Excel…";
         try {
-          const [XLSX, JSZip] = await Promise.all([
-            loadScriptFromSources("XLSX", XLSX_SOURCES),
-            loadScriptFromSources("JSZip", JSZIP_SOURCES)
-          ]);
-          const counts = getCounts();
-          const namedAttachments = buildAttachmentNames();
-          const detailRows = [
-            [
-              "發票狀態",
-              "發票類型",
-              "消費日期",
-              "入帳日期",
-              "商店／說明",
-              "台幣金額",
-              "原幣幣別",
-              "原幣金額",
-              "卡號末四碼",
-              "備註",
-              "附件檔名"
-            ],
-            ...state.rows.map((row) => [
-              row.invoiceFound ? "已找到" : "尚未找到",
-              row.physicalInvoice ? "實體發票" : (attachmentCountForRow(row.id) ? "電子附件" : ""),
-              slashDate(row.transactionDate),
-              slashDate(row.postingDate),
-              row.description,
-              Number(row.amount || 0),
-              row.currency || "",
-              row.foreignAmount === "" ? "" : Number(row.foreignAmount),
-              CARD_TAIL,
-              row.note || "",
-              namedAttachments
-                .filter((item) => item.rowId === row.id)
-                .map((item) => item.exportName)
-                .join("、")
-            ])
-          ];
-
-          const summaryRows = [
-            ["公司卡報帳整理摘要", ""],
-            ["卡號末四碼", CARD_TAIL],
-            ["帳單年度", state.statementYear],
-            ["實際消費筆數", state.rows.length],
-            ["實際報帳金額", counts.total],
-            ["發票已找到", counts.found],
-            ["實體發票", counts.physical],
-            ["尚缺發票", counts.missing],
-            ["附件數量", state.attachments.length],
-            ["已排除國外交易手續費", `${counts.fees.length} 筆`],
-            ["已排除現金回饋", `${counts.cashback.length} 筆`],
-            ["產生時間", new Date().toLocaleString("zh-TW", { hour12: false })],
-            ["來源圖片", state.files.map((file) => file.name).join("、") || "手動資料"]
-          ];
-
-          const detailSheet = XLSX.utils.aoa_to_sheet(detailRows);
-          detailSheet["!cols"] = [
-            { wch: 12 },
-            { wch: 12 },
-            { wch: 13 },
-            { wch: 13 },
-            { wch: 34 },
-            { wch: 14 },
-            { wch: 12 },
-            { wch: 15 },
-            { wch: 13 },
-            { wch: 30 },
-            { wch: 54 }
-          ];
-          detailSheet["!autofilter"] = { ref: `A1:K${detailRows.length}` };
-
-          const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
-          summarySheet["!cols"] = [{ wch: 28 }, { wch: 42 }];
-
-          const workbook = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(workbook, detailSheet, "報帳明細");
-          XLSX.utils.book_append_sheet(workbook, summarySheet, "核對摘要");
-
-          const firstDate = state.rows.map((row) => row.transactionDate).filter(Boolean).sort()[0] ||
-            `${state.statementYear}-01-01`;
-          const month = firstDate.slice(0, 7);
-          const excelFilename = safeFilename(`公司卡2388_${month}_${Math.round(counts.total)}元`) + ".xlsx";
-          const zipFilename = safeFilename(`公司卡2388_${month}_報帳整理包`) + ".zip";
+          const XLSX = await loadScriptFromSources("XLSX", XLSX_SOURCES);
+          const { workbook, filename } = createExcelWorkbook(XLSX);
           const workbookData = XLSX.write(workbook, {
             bookType: "xlsx",
             type: "array",
             compression: true
           });
+          downloadBlob(
+            new Blob([workbookData], {
+              type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            }),
+            filename
+          );
+          toast(`Excel 已下載：${filename}`);
+        } catch (error) {
+          console.error(error);
+          showNotice("Excel 元件載入失敗，請確認目前有網路後再按一次「下載 Excel」。", "error");
+        } finally {
+          dom.excelExportButton.disabled = state.rows.length === 0 || state.busy;
+          dom.excelExportButton.textContent = "下載 Excel";
+        }
+      }
 
+      async function exportReceiptZip() {
+        if (!state.attachments.length) {
+          toast("目前還沒有發票附件");
+          return;
+        }
+        dom.exportButton.disabled = true;
+        try {
+          const JSZip = await loadScriptFromSources("JSZip", JSZIP_SOURCES);
+          const namedAttachments = buildAttachmentNames();
+          const zipFilename = safeFilename(`公司卡2388_${exportMonth()}_發票附件`) + ".zip";
           const zip = new JSZip();
-          zip.file(excelFilename, workbookData);
           namedAttachments.forEach((item) => zip.file(item.exportName, item.file));
           const blob = await zip.generateAsync(
             { type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } },
             (metadata) => {
-              dom.exportButton.lastChild.textContent = ` 打包中 ${Math.round(metadata.percent)}%`;
+              dom.exportButton.textContent = `打包中 ${Math.round(metadata.percent)}%`;
             }
           );
           downloadBlob(blob, zipFilename);
-          toast(`整理包已匯出：${zipFilename}`);
+          toast(`發票 ZIP 已下載：${zipFilename}`);
         } catch (error) {
           console.error(error);
-          showNotice("匯出元件載入失敗，請確認目前有網路後再按一次「匯出整理包」。", "error");
+          showNotice("ZIP 元件載入失敗，請確認目前有網路後再按一次「下載發票 ZIP」。", "error");
         } finally {
-          dom.exportButton.disabled = state.rows.length === 0 || state.busy;
-          dom.exportButton.lastChild.textContent = " 匯出整理包";
+          dom.exportButton.disabled =
+            state.rows.length === 0 ||
+            state.attachments.length === 0 ||
+            state.busy ||
+            state.attachmentProcessing;
+          dom.exportButton.textContent = "下載發票 ZIP";
         }
       }
 
@@ -4628,7 +4976,7 @@
           state.attachmentProcessing = false;
           dom.receiptDropZone.classList.remove("is-processing");
           dom.receiptPickButton.disabled = false;
-          dom.exportButton.disabled = state.rows.length === 0;
+          dom.exportButton.disabled = state.rows.length === 0 || state.attachments.length === 0;
         }
       }
 
@@ -4815,7 +5163,8 @@
       });
 
       dom.addRowButton.addEventListener("click", addRow);
-      dom.exportButton.addEventListener("click", exportPackage);
+      dom.excelExportButton.addEventListener("click", downloadExcel);
+      dom.exportButton.addEventListener("click", exportReceiptZip);
       dom.receiptPickButton.addEventListener("click", () => dom.receiptInput.click());
       dom.receiptInput.addEventListener("change", () => {
         autoAttachReceiptFiles(dom.receiptInput.files);
@@ -4918,8 +5267,16 @@
         getAccountingMail: buildAccountingMail,
         generateAccountingMail,
         getGeneratedAccountingMail: () => state.accountingMailText,
+        getSubscriptionMatches: (rows = state.rows) =>
+          getSubscriptionMatches(rows).map(({ guide, rows: matchedRows }) => ({
+            name: guide.name,
+            rowIds: matchedRows.map((row) => row.id),
+            url: guide.url
+          })),
         getAttachmentNames: () => buildAttachmentNames().map((item) => item.exportName),
-        exportPackage
+        downloadExcel,
+        exportReceiptZip,
+        exportPackage: exportReceiptZip
       };
     })();
   </script>

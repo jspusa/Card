@@ -1211,6 +1211,75 @@
       box-shadow: var(--shadow-sm);
     }
 
+    .accounting-mail-panel {
+      display: none;
+      margin-top: 18px;
+      overflow: hidden;
+      border-color: #d8c8f2;
+    }
+
+    .accounting-mail-panel.is-visible {
+      display: block;
+    }
+
+    .accounting-mail-panel .review-head {
+      background: var(--purple-50);
+    }
+
+    .accounting-mail-panel .review-count {
+      color: var(--purple-700);
+      background: var(--purple-100);
+      border-color: #d5c1f3;
+    }
+
+    .accounting-mail-body {
+      display: grid;
+      gap: 12px;
+      padding: 20px;
+    }
+
+    .accounting-mail-text {
+      width: 100%;
+      min-height: 220px;
+      padding: 14px;
+      color: var(--navy-950);
+      background: #fcfaff;
+      border: 1px solid #d8c8f2;
+      border-radius: var(--radius-md);
+      line-height: 1.65;
+      resize: vertical;
+      outline: 0;
+    }
+
+    .accounting-mail-text:focus {
+      border-color: var(--purple-600);
+      box-shadow: 0 0 0 3px rgba(124, 75, 194, .1);
+    }
+
+    .accounting-mail-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .accounting-mail-help {
+      margin: 0;
+      color: var(--slate-600);
+      font-size: 12px;
+    }
+
+    .copy-accounting-mail {
+      color: var(--white);
+      background: var(--purple-600);
+      border-color: var(--purple-600);
+    }
+
+    .copy-accounting-mail:hover:not(:disabled) {
+      background: var(--purple-700);
+      border-color: var(--purple-700);
+    }
+
     .floating-export {
       position: fixed;
       right: 28px;
@@ -1487,6 +1556,15 @@
       .receipt-drop-zone {
         grid-template-columns: 1fr;
       }
+
+      .accounting-mail-actions {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .copy-accounting-mail {
+        width: 100%;
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1755,6 +1833,29 @@
       <p class="drop-help">支援 JPG、PNG、WEBP、PDF。配對不確定的檔案會保留在下方讓你改選；附件只保留到匯出前，請勿重新整理頁面。</p>
       <div class="review-grid" id="reviewGrid"></div>
     </section>
+
+    <section class="surface accounting-mail-panel" id="accountingMailPanel" aria-label="給會計的實體發票通知">
+      <div class="review-head">
+        <div>
+          <h2>給會計的實體發票通知</h2>
+          <p>只會列出上方已標記為「實體」的消費，內容會隨勾選與修改自動更新。</p>
+        </div>
+        <span class="review-count" id="accountingMailCount">0 筆實體發票</span>
+      </div>
+      <div class="accounting-mail-body">
+        <textarea class="accounting-mail-text" id="accountingMailText" readonly aria-label="給會計的實體發票通知內容"></textarea>
+        <div class="accounting-mail-actions">
+          <p class="accounting-mail-help">複製後可直接貼到 Email、LINE 或公司通訊軟體。</p>
+          <button class="btn copy-accounting-mail" id="copyAccountingMailButton" type="button" disabled>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="8" y="8" width="11" height="12" rx="2" stroke="currentColor" stroke-width="1.7"/>
+              <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.7"/>
+            </svg>
+            複製給會計
+          </button>
+        </div>
+      </div>
+    </section>
   </main>
 
   <button class="btn btn-primary floating-export" id="exportButton" type="button" disabled>
@@ -1881,6 +1982,10 @@
         receiptInput: $("#receiptInput"),
         rowReceiptInput: $("#rowReceiptInput"),
         reviewGrid: $("#reviewGrid"),
+        accountingMailPanel: $("#accountingMailPanel"),
+        accountingMailCount: $("#accountingMailCount"),
+        accountingMailText: $("#accountingMailText"),
+        copyAccountingMailButton: $("#copyAccountingMailButton"),
         toast: $("#toast")
       };
 
@@ -2536,14 +2641,20 @@
         return `${Number.isInteger(amount) ? amount : amount.toFixed(2)}${currency}`;
       }
 
+      function filenameLabel(row) {
+        const note = String(row?.note ?? "").trim();
+        const description = String(row?.description ?? "").trim();
+        return note || description || "未填商店";
+      }
+
       function filenameBase(row, item) {
         if (!row) {
           const originalBase = String(item?.file?.name || "附件").replace(/\.[^.]+$/, "");
           return safeFilename(`未配對_${originalBase}`).slice(0, 90);
         }
         const date = row.transactionDate || `${state.statementYear}-未填日期`;
-        const description = safeFilename(row.description || "未填商店").slice(0, 60);
-        return safeFilename(`${date}_${description}_${filenameAmount(row)}`);
+        const label = safeFilename(filenameLabel(row)).slice(0, 60);
+        return safeFilename(`${date}_${label}_${filenameAmount(row)}`);
       }
 
       function buildAttachmentNames() {
@@ -2778,6 +2889,55 @@
         return `${row.invoiceFound ? "✓ " : ""}${row.transactionDate}｜${row.description || "未填商店"}｜${amount}`;
       }
 
+      function accountingMailAmount(row) {
+        const twdAmount = `NT$${formatInteger(row.amount || 0)}`;
+        const hasForeign = row.foreignAmount !== "" &&
+          row.foreignAmount !== null &&
+          row.foreignAmount !== undefined &&
+          Number.isFinite(Number(row.foreignAmount)) &&
+          String(row.currency || "").toUpperCase() !== "TWD";
+        if (!hasForeign) return twdAmount;
+        return `${twdAmount}（原幣 ${formatDecimal(row.foreignAmount)} ${row.currency || "原幣"}）`;
+      }
+
+      function buildAccountingMail() {
+        const physicalRows = state.rows.filter((row) => row.physicalInvoice);
+        if (!physicalRows.length) {
+          return "目前尚未標記實體發票。\n\n請在上方表格勾選「實體」，這裡就會自動產生可傳給會計的通知。";
+        }
+
+        const items = physicalRows.map((row, index) => {
+          const note = String(row.note || "").trim();
+          const description = String(row.description || "").trim();
+          const label = note
+            ? `${note}${description && description !== note ? `（${description}）` : ""}`
+            : (description || "未填商店");
+          return `${index + 1}. ${slashDate(row.transactionDate) || "未填日期"}｜${label}｜${accountingMailAmount(row)}`;
+        });
+        const total = physicalRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+
+        return [
+          "會計您好，",
+          "",
+          `以下 ${physicalRows.length} 筆報帳項目的發票為實體發票：`,
+          "",
+          ...items,
+          "",
+          `實體發票共 ${physicalRows.length} 張，台幣金額合計 NT$${formatInteger(total)}。`,
+          "以上發票我會再帶至辦公室交付。",
+          "",
+          "謝謝。"
+        ].join("\n");
+      }
+
+      function renderAccountingMail() {
+        const physicalCount = state.rows.filter((row) => row.physicalInvoice).length;
+        dom.accountingMailPanel.classList.toggle("is-visible", state.rows.length > 0);
+        dom.accountingMailCount.textContent = `${physicalCount} 筆實體發票`;
+        dom.accountingMailText.value = buildAccountingMail();
+        dom.copyAccountingMailButton.disabled = physicalCount === 0;
+      }
+
       function renderReview() {
         dom.reviewPanel.classList.toggle("is-visible", state.rows.length > 0);
         const unmatchedCount = state.attachments.filter((item) => !item.rowId && item.status !== "processing").length;
@@ -2923,6 +3083,7 @@
         dom.checkAll.indeterminate = counts.found > 0 && counts.found < state.rows.length;
         dom.checkAll.disabled = state.rows.length === 0;
         renderReview();
+        renderAccountingMail();
 
         $$(".filter-btn").forEach((button) => {
           button.classList.toggle("is-active", button.dataset.filter === state.filter);
@@ -3205,6 +3366,7 @@
         dom.allCount.textContent = `(${state.rows.length})`;
         dom.missingCount.textContent = `(${counts.missing})`;
         dom.foundCount.textContent = `(${counts.found})`;
+        renderAccountingMail();
       }
 
       function handleTableFocus(event) {
@@ -3294,6 +3456,36 @@
         link.click();
         link.remove();
         window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
+
+      function fallbackCopyAccountingMail() {
+        dom.accountingMailText.focus();
+        dom.accountingMailText.select();
+        try {
+          return Boolean(document.execCommand?.("copy"));
+        } catch {
+          return false;
+        }
+      }
+
+      async function copyAccountingMail() {
+        const physicalCount = state.rows.filter((row) => row.physicalInvoice).length;
+        if (!physicalCount) {
+          toast("請先標記實體發票");
+          return;
+        }
+        const text = buildAccountingMail();
+        let copied = false;
+        try {
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
+            copied = true;
+          }
+        } catch {
+          copied = false;
+        }
+        if (!copied) copied = fallbackCopyAccountingMail();
+        toast(copied ? "給會計的通知已複製" : "文字已選取，請按 ⌘C 複製");
       }
 
       async function exportPackage() {
@@ -3889,6 +4081,7 @@
           openAttachment(card.dataset.attachmentId);
         }
       });
+      dom.copyAccountingMailButton.addEventListener("click", copyAccountingMail);
       dom.rawButton.addEventListener("click", () => {
         dom.rawText.value = state.rawText;
         dom.rawDialog.showModal();
@@ -3942,6 +4135,8 @@
           render();
           return true;
         },
+        getFilenameLabel: filenameLabel,
+        getAccountingMail: buildAccountingMail,
         getAttachmentNames: () => buildAttachmentNames().map((item) => item.exportName),
         exportPackage
       };

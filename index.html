@@ -627,13 +627,6 @@
       background: var(--green-50);
     }
 
-    tbody tr.is-found td:nth-child(n+3):nth-child(-n+9) .cell-input {
-      color: var(--slate-500);
-      text-decoration: line-through;
-      text-decoration-color: #7ca88f;
-      text-decoration-thickness: 1.5px;
-    }
-
     tbody tr.is-physical td {
       background: var(--purple-50);
     }
@@ -1269,13 +1262,18 @@
       font-size: 12px;
     }
 
-    .copy-accounting-mail {
+    .accounting-mail-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .generate-accounting-mail {
       color: var(--white);
       background: var(--purple-600);
       border-color: var(--purple-600);
     }
 
-    .copy-accounting-mail:hover:not(:disabled) {
+    .generate-accounting-mail:hover:not(:disabled) {
       background: var(--purple-700);
       border-color: var(--purple-700);
     }
@@ -1562,7 +1560,12 @@
         flex-direction: column;
       }
 
-      .copy-accounting-mail {
+      .accounting-mail-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .accounting-mail-buttons .btn {
         width: 100%;
       }
     }
@@ -1838,21 +1841,26 @@
       <div class="review-head">
         <div>
           <h2>給會計的實體發票通知</h2>
-          <p>只會列出上方已標記為「實體」的消費，內容會隨勾選與修改自動更新。</p>
+          <p>先在上方標記實體發票，再按「生成信件」產生可複製的通知。</p>
         </div>
         <span class="review-count" id="accountingMailCount">0 筆實體發票</span>
       </div>
       <div class="accounting-mail-body">
         <textarea class="accounting-mail-text" id="accountingMailText" readonly aria-label="給會計的實體發票通知內容"></textarea>
         <div class="accounting-mail-actions">
-          <p class="accounting-mail-help">複製後可直接貼到 Email、LINE 或公司通訊軟體。</p>
-          <button class="btn copy-accounting-mail" id="copyAccountingMailButton" type="button" disabled>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <rect x="8" y="8" width="11" height="12" rx="2" stroke="currentColor" stroke-width="1.7"/>
-              <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.7"/>
-            </svg>
-            複製給會計
-          </button>
+          <p class="accounting-mail-help">修改勾選、日期、商店、金額或備註後，需要重新生成。</p>
+          <div class="accounting-mail-buttons">
+            <button class="btn generate-accounting-mail" id="generateAccountingMailButton" type="button" disabled>
+              生成信件
+            </button>
+            <button class="btn" id="copyAccountingMailButton" type="button" disabled>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="8" y="8" width="11" height="12" rx="2" stroke="currentColor" stroke-width="1.7"/>
+                <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.7"/>
+              </svg>
+              複製信件
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -1985,6 +1993,7 @@
         accountingMailPanel: $("#accountingMailPanel"),
         accountingMailCount: $("#accountingMailCount"),
         accountingMailText: $("#accountingMailText"),
+        generateAccountingMailButton: $("#generateAccountingMailButton"),
         copyAccountingMailButton: $("#copyAccountingMailButton"),
         toast: $("#toast")
       };
@@ -2002,6 +2011,8 @@
         attachments: [],
         attachmentTargetId: "",
         attachmentProcessing: false,
+        accountingMailSignature: "",
+        accountingMailText: "",
         statementYear: new Date().getFullYear()
       };
 
@@ -2903,21 +2914,24 @@
       function buildAccountingMail() {
         const physicalRows = state.rows.filter((row) => row.physicalInvoice);
         if (!physicalRows.length) {
-          return "目前尚未標記實體發票。\n\n請在上方表格勾選「實體」，這裡就會自動產生可傳給會計的通知。";
+          return "";
         }
 
         const items = physicalRows.map((row, index) => {
           const note = String(row.note || "").trim();
           const description = String(row.description || "").trim();
-          const label = note
-            ? `${note}${description && description !== note ? `（${description}）` : ""}`
-            : (description || "未填商店");
-          return `${index + 1}. ${slashDate(row.transactionDate) || "未填日期"}｜${label}｜${accountingMailAmount(row)}`;
+          const parts = [
+            `${index + 1}. ${slashDate(row.transactionDate) || "未填日期"}`,
+            description || "未填商店",
+            accountingMailAmount(row)
+          ];
+          if (note) parts.push(`備註：${note}`);
+          return parts.join("｜");
         });
         const total = physicalRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
 
         return [
-          "會計您好，",
+          "您好，",
           "",
           `以下 ${physicalRows.length} 筆報帳項目的發票為實體發票：`,
           "",
@@ -2930,12 +2944,38 @@
         ].join("\n");
       }
 
+      function accountingMailSignature() {
+        return JSON.stringify(
+          state.rows
+            .filter((row) => row.physicalInvoice)
+            .map((row) => [
+              row.id,
+              row.transactionDate,
+              row.description,
+              row.amount,
+              row.currency,
+              row.foreignAmount,
+              row.note
+            ])
+        );
+      }
+
       function renderAccountingMail() {
         const physicalCount = state.rows.filter((row) => row.physicalInvoice).length;
+        const currentSignature = accountingMailSignature();
+        if (state.accountingMailSignature !== currentSignature) {
+          state.accountingMailSignature = "";
+          state.accountingMailText = "";
+        }
         dom.accountingMailPanel.classList.toggle("is-visible", state.rows.length > 0);
         dom.accountingMailCount.textContent = `${physicalCount} 筆實體發票`;
-        dom.accountingMailText.value = buildAccountingMail();
-        dom.copyAccountingMailButton.disabled = physicalCount === 0;
+        dom.accountingMailText.value = state.accountingMailText || (
+          physicalCount
+            ? `已標記 ${physicalCount} 筆實體發票。\n\n請按下方「生成信件」產生通知內容。`
+            : "目前尚未標記實體發票。\n\n請先在上方表格勾選「實體」。"
+        );
+        dom.generateAccountingMailButton.disabled = physicalCount === 0;
+        dom.copyAccountingMailButton.disabled = !state.accountingMailText;
       }
 
       function renderReview() {
@@ -3468,13 +3508,28 @@
         }
       }
 
-      async function copyAccountingMail() {
+      function generateAccountingMail() {
         const physicalCount = state.rows.filter((row) => row.physicalInvoice).length;
         if (!physicalCount) {
           toast("請先標記實體發票");
+          return "";
+        }
+        state.accountingMailSignature = accountingMailSignature();
+        state.accountingMailText = buildAccountingMail();
+        renderAccountingMail();
+        toast("信件已生成");
+        return state.accountingMailText;
+      }
+
+      async function copyAccountingMail() {
+        if (
+          !state.accountingMailText ||
+          state.accountingMailSignature !== accountingMailSignature()
+        ) {
+          toast("請先按「生成信件」");
           return;
         }
-        const text = buildAccountingMail();
+        const text = state.accountingMailText;
         let copied = false;
         try {
           if (navigator.clipboard?.writeText) {
@@ -4081,6 +4136,7 @@
           openAttachment(card.dataset.attachmentId);
         }
       });
+      dom.generateAccountingMailButton.addEventListener("click", generateAccountingMail);
       dom.copyAccountingMailButton.addEventListener("click", copyAccountingMail);
       dom.rawButton.addEventListener("click", () => {
         dom.rawText.value = state.rawText;
@@ -4137,6 +4193,8 @@
         },
         getFilenameLabel: filenameLabel,
         getAccountingMail: buildAccountingMail,
+        generateAccountingMail,
+        getGeneratedAccountingMail: () => state.accountingMailText,
         getAttachmentNames: () => buildAttachmentNames().map((item) => item.exportName),
         exportPackage
       };

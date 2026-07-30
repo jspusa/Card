@@ -3909,7 +3909,7 @@
       render();
 
       const query = new URLSearchParams(window.location.search);
-      if (query.get("demo") === "1") loadDemo();
+      if (query.get("demo") === "1" || window.location.hash === "#demo=1") loadDemo();
 
       window.CompanyCard2388 = {
         parseStatementText,

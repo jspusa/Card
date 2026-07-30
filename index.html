@@ -1570,6 +1570,702 @@
       }
     }
 
+    /* Minimal, Apple-inspired presentation layer */
+    :root {
+      --blue-700: #0066cc;
+      --blue-600: #0071e3;
+      --blue-100: #e8f2ff;
+      --blue-50: #f5f9ff;
+      --slate-50: #f5f5f7;
+      --slate-100: #f0f0f2;
+      --slate-200: #e5e5e7;
+      --slate-300: #d2d2d7;
+      --slate-500: #86868b;
+      --slate-600: #6e6e73;
+      --navy-950: #1d1d1f;
+      --navy-900: #1d1d1f;
+      --navy-700: #424245;
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 22px;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, .03), 0 8px 28px rgba(0, 0, 0, .04);
+      --shadow-md: 0 20px 55px rgba(0, 0, 0, .11);
+    }
+
+    html,
+    body {
+      background: #f5f5f7;
+    }
+
+    body {
+      color: #1d1d1f;
+      letter-spacing: -.006em;
+    }
+
+    .topbar {
+      min-height: 54px;
+      padding: 0 max(20px, calc((100vw - 1220px) / 2));
+      background: rgba(250, 250, 252, .82);
+      border-bottom-color: rgba(0, 0, 0, .07);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      backdrop-filter: saturate(180%) blur(20px);
+    }
+
+    .brand {
+      gap: 10px;
+    }
+
+    .brand-mark {
+      width: 30px;
+      height: 30px;
+      color: var(--white);
+      background: var(--blue-600);
+      border-radius: 9px;
+      box-shadow: none;
+    }
+
+    .brand h1 {
+      font-size: 18px;
+      font-weight: 650;
+      letter-spacing: -.025em;
+    }
+
+    .card-tail {
+      min-height: 30px;
+      padding: 0 11px;
+      color: var(--slate-600);
+      background: rgba(255, 255, 255, .72);
+      border-color: rgba(0, 0, 0, .08);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .card-tail svg {
+      display: none;
+    }
+
+    .shell {
+      width: min(1220px, 100%);
+      padding: 34px 24px 120px;
+    }
+
+    .surface {
+      background: rgba(255, 255, 255, .96);
+      border: 0;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .ingest-grid {
+      display: block;
+      width: min(860px, 100%);
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .upload-pane {
+      padding: 16px;
+      border: 0;
+    }
+
+    .drop-zone,
+    .drop-zone.has-file {
+      min-height: 292px;
+      padding: 24px;
+      color: var(--slate-600);
+      background: #fafafa;
+      border: 1px dashed #c7c7cc;
+      border-radius: 18px;
+    }
+
+    .drop-zone:hover,
+    .drop-zone:focus-visible,
+    .drop-zone.is-dragging {
+      background: var(--blue-50);
+      border-color: var(--blue-600);
+      box-shadow: 0 0 0 4px rgba(0, 113, 227, .1);
+    }
+
+    .upload-icon {
+      width: 56px;
+      height: 56px;
+      color: var(--blue-600);
+      background: var(--blue-100);
+    }
+
+    .drop-title {
+      color: #1d1d1f;
+      font-size: 25px;
+      font-weight: 650;
+      letter-spacing: -.035em;
+    }
+
+    .drop-subtitle {
+      font-size: 14px;
+    }
+
+    .drop-link {
+      color: var(--blue-600);
+      font-weight: 600;
+    }
+
+    .preview-frame {
+      border: 0;
+      border-radius: 14px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, .1);
+    }
+
+    .progress-bar {
+      background: var(--blue-600);
+    }
+
+    .rules-pane {
+      padding: 0;
+      background: transparent;
+      border-top: 1px solid var(--slate-200);
+    }
+
+    .compact-details > summary,
+    .summary-more > summary,
+    .inline-help > summary,
+    .table-help > summary {
+      list-style: none;
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .compact-details > summary::-webkit-details-marker,
+    .summary-more > summary::-webkit-details-marker,
+    .inline-help > summary::-webkit-details-marker,
+    .table-help > summary::-webkit-details-marker,
+    .toolbar-more > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .compact-details > summary {
+      display: flex;
+      min-height: 58px;
+      padding: 0 22px;
+      align-items: center;
+      gap: 10px;
+      color: #1d1d1f;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .compact-details > summary small {
+      margin-left: auto;
+      color: var(--slate-500);
+      font-size: 12px;
+      font-weight: 450;
+    }
+
+    .compact-details > summary::after,
+    .summary-more > summary::after,
+    .inline-help > summary::after,
+    .table-help > summary::after {
+      content: "⌄";
+      color: var(--slate-500);
+      font-size: 15px;
+      transition: transform .2s ease;
+    }
+
+    .compact-details[open] > summary::after,
+    .summary-more[open] > summary::after,
+    .inline-help[open] > summary::after,
+    .table-help[open] > summary::after {
+      transform: rotate(180deg);
+    }
+
+    .compact-details-content {
+      padding: 4px 22px 22px;
+    }
+
+    .rule-list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .rule-item {
+      grid-template-columns: 20px minmax(0, 1fr);
+      gap: 8px;
+      padding: 12px;
+      color: var(--slate-600);
+      background: #f7f7f9;
+      border-radius: 13px;
+      font-size: 12px;
+    }
+
+    .rule-check {
+      width: 18px;
+      height: 18px;
+      color: var(--blue-600);
+      background: var(--blue-100);
+      border: 0;
+    }
+
+    .year-row {
+      margin-top: 14px;
+      padding-top: 14px;
+    }
+
+    .year-input:focus,
+    .search-input:focus,
+    .cell-input:focus,
+    .attachment-row-select:focus {
+      border-color: var(--blue-600);
+      box-shadow: 0 0 0 3px rgba(0, 113, 227, .1);
+    }
+
+    .privacy-note {
+      margin: 14px 0 0;
+    }
+
+    .notice {
+      width: min(860px, 100%);
+      margin-right: auto;
+      margin-left: auto;
+      border: 0;
+      border-radius: 14px;
+    }
+
+    .workspace,
+    .review-panel,
+    .accounting-mail-panel {
+      margin-top: 22px;
+      overflow: visible;
+    }
+
+    .summary-bar {
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      border-bottom: 1px solid var(--slate-200);
+    }
+
+    .metric {
+      padding: 22px;
+      border-right-color: var(--slate-200);
+    }
+
+    .metric-label {
+      color: var(--slate-500);
+      font-weight: 550;
+    }
+
+    .metric-value {
+      color: #1d1d1f;
+      font-size: 28px;
+      font-weight: 650;
+      letter-spacing: -.04em;
+    }
+
+    .summary-more {
+      grid-column: 1 / -1;
+      background: #fafafa;
+      border-top: 1px solid var(--slate-200);
+    }
+
+    .summary-more > summary {
+      display: flex;
+      min-height: 42px;
+      padding: 0 20px;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--slate-600);
+      font-size: 12px;
+      font-weight: 550;
+    }
+
+    .excluded-summary {
+      padding: 2px 20px 16px;
+      background: transparent;
+    }
+
+    .toolbar {
+      padding: 12px 14px;
+    }
+
+    .filter-btn {
+      min-height: 34px;
+      border-radius: 999px;
+      font-weight: 550;
+    }
+
+    .filter-btn.is-active {
+      color: var(--blue-700);
+      background: var(--blue-100);
+      border-color: transparent;
+    }
+
+    .search-input {
+      background: #f5f5f7;
+      border-color: transparent;
+      border-radius: 999px;
+    }
+
+    .toolbar-more {
+      position: relative;
+    }
+
+    .toolbar-more > summary {
+      display: inline-flex;
+      min-height: 36px;
+      padding: 7px 12px;
+      align-items: center;
+      list-style: none;
+      color: var(--slate-600);
+      background: #f5f5f7;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 550;
+      cursor: pointer;
+    }
+
+    .toolbar-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      z-index: 18;
+      display: grid;
+      width: 260px;
+      gap: 8px;
+      padding: 10px;
+      background: rgba(255, 255, 255, .97);
+      border: 1px solid rgba(0, 0, 0, .08);
+      border-radius: 14px;
+      box-shadow: 0 18px 48px rgba(0, 0, 0, .14);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+    }
+
+    .column-toggle {
+      display: flex;
+      min-height: 40px;
+      padding: 8px 10px;
+      align-items: center;
+      gap: 9px;
+      color: #1d1d1f;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .column-toggle input {
+      width: 17px;
+      height: 17px;
+      accent-color: var(--blue-600);
+    }
+
+    .toolbar-menu .btn {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .table-scroll:not(.show-advanced-columns) .advanced-column {
+      display: none;
+    }
+
+    table {
+      min-width: 980px;
+    }
+
+    .table-scroll.show-advanced-columns table {
+      min-width: 1360px;
+    }
+
+    th,
+    td {
+      border-right: 0;
+      border-bottom-color: var(--slate-200);
+    }
+
+    thead th {
+      color: var(--slate-600);
+      background: rgba(250, 250, 252, .96);
+      font-weight: 600;
+    }
+
+    tbody tr.is-missing td {
+      background: var(--white);
+    }
+
+    tbody tr.is-missing:hover td,
+    tbody tr:hover td {
+      background: #f8f8fa;
+    }
+
+    tbody tr.is-found td {
+      background: #f1faf5;
+    }
+
+    tbody tr.is-found:hover td {
+      background: #eaf7ef;
+    }
+
+    .cell-input {
+      border-radius: 9px;
+    }
+
+    .checkbox:checked,
+    .checkbox:indeterminate {
+      background: var(--blue-600);
+      border-color: var(--blue-600);
+    }
+
+    .checkbox:focus-visible,
+    .btn:focus-visible {
+      outline-color: rgba(0, 113, 227, .22);
+    }
+
+    .table-footer {
+      min-height: 58px;
+      background: #fafafa;
+    }
+
+    .table-help {
+      position: relative;
+      color: var(--slate-500);
+      font-size: 12px;
+    }
+
+    .table-help > summary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 550;
+    }
+
+    .table-help .footer-hint {
+      margin-top: 8px;
+      font-size: 12px;
+    }
+
+    .btn {
+      min-height: 40px;
+      padding: 8px 15px;
+      border-color: var(--slate-300);
+      border-radius: 999px;
+      font-weight: 600;
+      box-shadow: none;
+    }
+
+    .btn-primary,
+    .generate-accounting-mail {
+      color: var(--white);
+      background: var(--blue-600);
+      border-color: var(--blue-600);
+      box-shadow: none;
+    }
+
+    .btn-primary:hover:not(:disabled),
+    .generate-accounting-mail:hover:not(:disabled) {
+      background: var(--blue-700);
+      border-color: var(--blue-700);
+    }
+
+    .review-head {
+      padding: 22px 24px;
+    }
+
+    .review-head h2 {
+      font-size: 20px;
+      font-weight: 650;
+      letter-spacing: -.025em;
+    }
+
+    .review-count {
+      color: var(--blue-700);
+      background: var(--blue-50);
+      border-color: var(--blue-100);
+    }
+
+    .receipt-drop-zone {
+      margin: 16px 20px 0;
+      padding: 22px;
+      background: #fafafa;
+      border-color: #c7c7cc;
+      border-radius: 16px;
+    }
+
+    .receipt-drop-zone.is-dragging,
+    .receipt-drop-zone.is-processing {
+      background: var(--blue-50);
+      border-color: var(--blue-600);
+      box-shadow: 0 0 0 4px rgba(0, 113, 227, .1);
+    }
+
+    .inline-help {
+      margin: 0 20px;
+    }
+
+    .inline-help > summary {
+      display: flex;
+      padding: 10px 0;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--slate-500);
+      font-size: 12px;
+    }
+
+    .inline-help .drop-help {
+      margin: 0;
+      padding: 0 0 12px;
+    }
+
+    .review-card {
+      border: 0;
+      border-radius: 16px;
+      box-shadow: 0 8px 26px rgba(0, 0, 0, .07);
+    }
+
+    .accounting-mail-panel {
+      border: 0;
+    }
+
+    .accounting-mail-panel .review-head {
+      background: transparent;
+    }
+
+    .accounting-mail-text {
+      background: #fafafa;
+      border-color: var(--slate-200);
+      border-radius: 16px;
+    }
+
+    .accounting-mail-text:focus {
+      border-color: var(--blue-600);
+      box-shadow: 0 0 0 3px rgba(0, 113, 227, .1);
+    }
+
+    .floating-export {
+      right: max(24px, calc((100vw - 1220px) / 2));
+      bottom: 22px;
+      min-height: 50px;
+      border-radius: 999px;
+      box-shadow: 0 14px 34px rgba(0, 113, 227, .22);
+    }
+
+    @media (max-width: 900px) {
+      .shell {
+        padding: 24px 16px 110px;
+      }
+
+      .rule-list {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-bar {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .metric:nth-child(2) {
+        border-right: 0;
+      }
+
+      .metric:nth-child(3),
+      .metric:nth-child(4) {
+        border-top: 1px solid var(--slate-200);
+      }
+    }
+
+    @media (max-width: 680px) {
+      .topbar {
+        min-height: 50px;
+        padding: 0 14px;
+      }
+
+      .brand-mark {
+        width: 28px;
+        height: 28px;
+      }
+
+      .shell {
+        padding: 14px 10px 100px;
+      }
+
+      .upload-pane {
+        padding: 10px;
+      }
+
+      .drop-zone,
+      .drop-zone.has-file {
+        min-height: 240px;
+        padding: 16px;
+      }
+
+      .drop-title {
+        font-size: 22px;
+      }
+
+      .compact-details > summary {
+        padding: 0 16px;
+      }
+
+      .compact-details-content {
+        padding: 2px 16px 18px;
+      }
+
+      .metric {
+        padding: 16px;
+      }
+
+      .metric-value {
+        font-size: 22px;
+      }
+
+      .toolbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .toolbar-actions {
+        display: grid;
+        grid-template-columns: 1fr auto;
+      }
+
+      .search-wrap {
+        width: 100%;
+      }
+
+      .toolbar-menu {
+        right: 0;
+        width: min(280px, calc(100vw - 36px));
+      }
+
+      .table-footer,
+      .review-head,
+      .accounting-mail-actions {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .review-head {
+        display: grid;
+        padding: 18px;
+      }
+
+      .receipt-drop-zone {
+        grid-template-columns: 1fr;
+        margin: 12px;
+        padding: 18px;
+      }
+
+      .inline-help {
+        margin: 0 14px;
+      }
+
+      .accounting-mail-body {
+        padding: 16px;
+      }
+
+      .floating-export {
+        right: 12px;
+        bottom: 14px;
+        left: 12px;
+        width: calc(100% - 24px);
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *,
       *::before,
@@ -1591,7 +2287,7 @@
           <path d="M7 14h4M7 16.8h6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
       </span>
-      <h1>公司卡報帳整理</h1>
+      <h1>Card</h1>
     </div>
     <div class="top-actions">
       <span class="card-tail" aria-label="目前只辨識信用卡尾號 2388">
@@ -1599,7 +2295,7 @@
           <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/>
           <path d="M3 9h18" stroke="currentColor" stroke-width="1.8"/>
         </svg>
-        尾號 2388
+        2388
       </span>
     </div>
   </header>
@@ -1617,8 +2313,8 @@
                 <path d="M5 13.5H4A2.5 2.5 0 0 0 1.5 16v2A2.5 2.5 0 0 0 4 20.5h16a2.5 2.5 0 0 0 2.5-2.5v-2a2.5 2.5 0 0 0-2.5-2.5h-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
               </svg>
             </span>
-            <p class="drop-title">拖曳帳單照片到這裡</p>
-            <p class="drop-subtitle" id="dropHint">或<span class="drop-link">點擊選擇圖片</span>（可一次選多頁）</p>
+            <p class="drop-title">放入帳單</p>
+            <p class="drop-subtitle" id="dropHint">拖曳到這裡，或<span class="drop-link">選擇圖片</span>（可一次多頁）</p>
           </div>
 
           <div class="file-preview">
@@ -1656,45 +2352,50 @@
         </div>
       </div>
 
-      <aside class="rules-pane">
-        <h2>辨識規則</h2>
-        <ul class="rule-list">
-          <li class="rule-item">
-            <span class="rule-check" aria-hidden="true">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                <path d="m6 12.5 4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </span>
-            <span>只保留尾號 <strong>2388</strong> 的實際刷卡消費</span>
-          </li>
-          <li class="rule-item">
-            <span class="rule-check" aria-hidden="true">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                <path d="m6 12.5 4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </span>
-            <span>排除現金回饋與所有負數款項</span>
-          </li>
-          <li class="rule-item">
-            <span class="rule-check" aria-hidden="true">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                <path d="m6 12.5 4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </span>
-            <span>排除國外交易手續費，保留原幣資料核對</span>
-          </li>
-        </ul>
-        <div class="year-row">
-          <label for="statementYear">帳單年度</label>
-          <input class="year-input" id="statementYear" type="number" min="2020" max="2100" step="1">
+      <details class="rules-pane compact-details">
+        <summary>
+          <span>辨識設定與隱私</span>
+          <small>需要時再展開</small>
+        </summary>
+        <div class="compact-details-content">
+          <ul class="rule-list">
+            <li class="rule-item">
+              <span class="rule-check" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <path d="m6 12.5 4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span>只保留尾號 <strong>2388</strong> 的實際刷卡消費</span>
+            </li>
+            <li class="rule-item">
+              <span class="rule-check" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <path d="m6 12.5 4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span>排除現金回饋與所有負數款項</span>
+            </li>
+            <li class="rule-item">
+              <span class="rule-check" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <path d="m6 12.5 4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span>排除國外交易手續費，保留原幣資料核對</span>
+            </li>
+          </ul>
+          <div class="year-row">
+            <label for="statementYear">帳單年度</label>
+            <input class="year-input" id="statementYear" type="number" min="2020" max="2100" step="1">
+          </div>
+          <p class="privacy-note">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v10H5V10Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+            </svg>
+            所有辨識都在這台裝置完成，不會上傳帳單或附件。
+          </p>
         </div>
-        <p class="privacy-note">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v10H5V10Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-          </svg>
-          帳單在你的瀏覽器本機辨識，不會上傳到伺服器。
-        </p>
-      </aside>
+      </details>
     </section>
 
     <div class="notice" id="notice" role="status" aria-live="polite">
@@ -1725,10 +2426,13 @@
           <p class="metric-label">實體發票</p>
           <p class="metric-value"><span id="physicalCount">0</span><small>筆</small></p>
         </div>
-        <div class="excluded-summary">
-          <strong>銀行款項已自動排除</strong>
-          <span id="excludedText">手續費 0 筆、現金回饋 0 筆</span>
-        </div>
+        <details class="summary-more">
+          <summary>查看排除項目</summary>
+          <div class="excluded-summary">
+            <strong>銀行款項已自動排除</strong>
+            <span id="excludedText">手續費 0 筆、現金回饋 0 筆</span>
+          </div>
+        </details>
       </div>
 
       <div class="toolbar">
@@ -1746,12 +2450,21 @@
             </svg>
             <input class="search-input" id="searchInput" type="search" placeholder="搜尋店家或備註">
           </label>
-          <button class="btn btn-quiet" id="rawButton" type="button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M4 5h16M4 10h16M4 15h10M4 20h7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-            </svg>
-            辨識原文
-          </button>
+          <details class="toolbar-more">
+            <summary>更多</summary>
+            <div class="toolbar-menu">
+              <label class="column-toggle">
+                <input id="advancedColumnsToggle" type="checkbox">
+                顯示入帳日與原幣欄位
+              </label>
+              <button class="btn btn-quiet" id="rawButton" type="button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 5h16M4 10h16M4 15h10M4 20h7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+                查看辨識原文
+              </button>
+            </div>
+          </details>
         </div>
       </div>
 
@@ -1761,11 +2474,11 @@
             <col style="width:72px">
             <col style="width:82px">
             <col style="width:130px">
-            <col style="width:130px">
+            <col class="advanced-column" style="width:130px">
             <col style="width:300px">
             <col style="width:125px">
-            <col style="width:105px">
-            <col style="width:135px">
+            <col class="advanced-column" style="width:105px">
+            <col class="advanced-column" style="width:135px">
             <col style="width:230px">
             <col style="width:104px">
           </colgroup>
@@ -1779,11 +2492,11 @@
               </th>
               <th style="text-align:center">實體</th>
               <th>消費日</th>
-              <th>入帳日</th>
+              <th class="advanced-column">入帳日</th>
               <th>商店／說明</th>
               <th style="text-align:right">台幣金額</th>
-              <th>原幣幣別</th>
-              <th style="text-align:right">原幣金額</th>
+              <th class="advanced-column">原幣幣別</th>
+              <th class="advanced-column" style="text-align:right">原幣金額</th>
               <th>備註</th>
               <th>夾檔</th>
             </tr>
@@ -1794,13 +2507,12 @@
       <div class="empty-results" id="emptyResults">目前篩選條件下沒有資料。</div>
 
       <div class="table-footer">
-        <span class="footer-hint" id="tableHint">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/>
-            <path d="M12 11v5M12 8h.01" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
-          </svg>
-          所有欄位都能直接修改；勾選與編輯會自動保存在這台電腦。
-        </span>
+        <details class="table-help">
+          <summary id="tableHint">操作說明</summary>
+          <span class="footer-hint">
+            所有欄位都能直接修改；勾選與編輯會自動保存在這台電腦。
+          </span>
+        </details>
         <button class="btn" id="addRowButton" type="button">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -1833,7 +2545,10 @@
         <input class="sr-only" id="receiptInput" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple>
         <input class="sr-only" id="rowReceiptInput" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple>
       </div>
-      <p class="drop-help">支援 JPG、PNG、WEBP、PDF。配對不確定的檔案會保留在下方讓你改選；附件只保留到匯出前，請勿重新整理頁面。</p>
+      <details class="inline-help">
+        <summary>支援格式與注意事項</summary>
+        <p class="drop-help">支援 JPG、PNG、WEBP、PDF。配對不確定的檔案會保留在下方讓你改選；附件只保留到匯出前，請勿重新整理頁面。</p>
+      </details>
       <div class="review-grid" id="reviewGrid"></div>
     </section>
 
@@ -1970,6 +2685,7 @@
         missingCount: $("#missingCount"),
         foundCount: $("#foundCount"),
         searchInput: $("#searchInput"),
+        advancedColumnsToggle: $("#advancedColumnsToggle"),
         tableScroll: $("#tableScroll"),
         tableBody: $("#tableBody"),
         emptyResults: $("#emptyResults"),
@@ -2006,6 +2722,7 @@
         rawText: "",
         filter: "all",
         search: "",
+        showAdvancedColumns: false,
         busy: false,
         previewUrl: "",
         attachments: [],
@@ -3063,7 +3780,7 @@
             <td>
               <input class="cell-input" data-field="transactionDate" type="date" value="${escapeHtml(row.transactionDate)}" aria-label="消費日">
             </td>
-            <td>
+            <td class="advanced-column">
               <input class="cell-input" data-field="postingDate" type="date" value="${escapeHtml(row.postingDate)}" aria-label="入帳日">
             </td>
             <td>
@@ -3072,10 +3789,10 @@
             <td>
               <input class="cell-input amount" data-field="amount" data-number="integer" inputmode="numeric" value="${escapeHtml(formatInteger(row.amount))}" aria-label="台幣金額">
             </td>
-            <td>
+            <td class="advanced-column">
               <input class="cell-input" data-field="currency" type="text" maxlength="3" value="${escapeHtml(row.currency || "")}" placeholder="TWD" aria-label="原幣幣別">
             </td>
-            <td>
+            <td class="advanced-column">
               <input class="cell-input amount" data-field="foreignAmount" data-number="decimal" inputmode="decimal" value="${escapeHtml(formatDecimal(row.foreignAmount))}" aria-label="原幣金額">
             </td>
             <td>
@@ -3115,6 +3832,8 @@
         dom.tableBody.innerHTML = filteredRows.map(rowTemplate).join("");
         dom.emptyResults.classList.toggle("is-visible", filteredRows.length === 0);
         dom.tableScroll.style.display = filteredRows.length ? "" : "none";
+        dom.tableScroll.classList.toggle("show-advanced-columns", state.showAdvancedColumns);
+        dom.advancedColumnsToggle.checked = state.showAdvancedColumns;
         dom.workspace.classList.toggle("is-visible", state.rows.length > 0);
         dom.exportButton.classList.toggle("is-visible", state.rows.length > 0);
         dom.exportButton.disabled = state.rows.length === 0 || state.busy || state.attachmentProcessing;
@@ -4056,6 +4775,10 @@
       dom.statementYear.addEventListener("change", changeStatementYear);
       dom.searchInput.addEventListener("input", () => {
         state.search = dom.searchInput.value;
+        render();
+      });
+      dom.advancedColumnsToggle.addEventListener("change", () => {
+        state.showAdvancedColumns = dom.advancedColumnsToggle.checked;
         render();
       });
 

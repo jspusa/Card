@@ -27,6 +27,10 @@
       --amber-50: #fffaf1;
       --red-700: #a33b3b;
       --red-100: #fae4e4;
+      --purple-700: #6d3ab2;
+      --purple-600: #7c4bc2;
+      --purple-100: #eadffd;
+      --purple-50: #f8f4ff;
       --shadow-sm: 0 1px 2px rgba(8, 26, 51, .04);
       --shadow-md: 0 12px 32px rgba(8, 26, 51, .08);
       --radius-sm: 7px;
@@ -453,7 +457,7 @@
 
     .summary-bar {
       display: grid;
-      grid-template-columns: repeat(3, minmax(140px, 1fr)) minmax(260px, 1.35fr);
+      grid-template-columns: repeat(4, minmax(120px, 1fr)) minmax(240px, 1.3fr);
       border-bottom: 1px solid var(--slate-200);
     }
 
@@ -580,7 +584,7 @@
 
     table {
       width: 100%;
-      min-width: 1240px;
+      min-width: 1360px;
       border-collapse: separate;
       border-spacing: 0;
       table-layout: fixed;
@@ -623,11 +627,23 @@
       background: var(--green-50);
     }
 
-    tbody tr.is-found td:nth-child(n+2):nth-child(-n+8) .cell-input {
+    tbody tr.is-found td:nth-child(n+3):nth-child(-n+9) .cell-input {
       color: var(--slate-500);
       text-decoration: line-through;
       text-decoration-color: #7ca88f;
       text-decoration-thickness: 1.5px;
+    }
+
+    tbody tr.is-physical td {
+      background: var(--purple-50);
+    }
+
+    tbody tr.is-physical td:first-child {
+      box-shadow: inset 4px 0 0 var(--purple-600);
+    }
+
+    tbody tr.is-physical:hover td {
+      background: #f2ebfd;
     }
 
     tbody tr.is-missing td {
@@ -644,6 +660,16 @@
 
     tbody tr.is-missing:hover td {
       background: #fff7e8;
+    }
+
+    tbody tr.is-physical td,
+    tbody tr.is-physical.is-found td {
+      background: var(--purple-50);
+    }
+
+    tbody tr.is-physical:hover td,
+    tbody tr.is-physical.is-found:hover td {
+      background: #f2ebfd;
     }
 
     .check-cell,
@@ -708,6 +734,46 @@
     .checkbox:focus-visible {
       outline: 3px solid rgba(16, 131, 72, .2);
       outline-offset: 2px;
+    }
+
+    .physical-cell {
+      text-align: center;
+    }
+
+    .physical-label {
+      display: inline-grid;
+      gap: 3px;
+      justify-items: center;
+      color: var(--slate-500);
+      font-size: 10px;
+      font-weight: 760;
+      cursor: pointer;
+    }
+
+    .physical-checkbox {
+      width: 22px;
+      height: 22px;
+      margin: 0;
+      appearance: none;
+      background: var(--white);
+      border: 1.5px solid #aa97c5;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .physical-checkbox:checked {
+      background: var(--purple-600);
+      border-color: var(--purple-600);
+      box-shadow: inset 0 0 0 5px var(--white), 0 0 0 2px var(--purple-100);
+    }
+
+    .physical-checkbox:focus-visible {
+      outline: 3px solid rgba(124, 75, 194, .2);
+      outline-offset: 2px;
+    }
+
+    .physical-label:has(.physical-checkbox:checked) {
+      color: var(--purple-700);
     }
 
     .cell-input {
@@ -937,46 +1003,42 @@
       display: grid;
       grid-template-columns: minmax(220px, 1fr) auto;
       gap: 12px;
-      align-items: end;
+      align-items: center;
       margin: 16px 20px 0;
-      padding: 16px;
+      padding: 20px;
       background: var(--slate-50);
       border: 1.5px dashed #9cabbc;
       border-radius: var(--radius-md);
       transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
     }
 
-    .receipt-drop-zone.is-dragging {
+    .receipt-drop-zone.is-dragging,
+    .receipt-drop-zone.is-processing {
       background: #f3faf6;
       border-color: var(--green-600);
       box-shadow: 0 0 0 3px rgba(16, 131, 72, .11);
     }
 
-    .receipt-target-wrap {
-      display: grid;
-      gap: 6px;
-    }
-
-    .receipt-target-wrap label {
-      color: var(--navy-700);
-      font-size: 12px;
+    .receipt-drop-title {
+      margin: 0 0 4px;
+      color: var(--navy-950);
+      font-size: 16px;
       font-weight: 760;
     }
 
-    .receipt-target {
-      width: 100%;
-      min-height: 40px;
-      padding: 7px 10px;
-      color: var(--navy-950);
-      background: var(--white);
-      border: 1px solid var(--slate-300);
-      border-radius: var(--radius-sm);
-      outline: 0;
+    .receipt-drop-copy {
+      margin: 0;
+      color: var(--slate-600);
+      font-size: 13px;
     }
 
-    .receipt-target:focus {
-      border-color: var(--green-600);
-      box-shadow: 0 0 0 3px rgba(16, 131, 72, .09);
+    .receipt-progress {
+      display: block;
+      min-height: 18px;
+      margin-top: 6px;
+      color: var(--green-700);
+      font-size: 12px;
+      font-weight: 720;
     }
 
     .drop-help {
@@ -1010,6 +1072,15 @@
       border: 1px solid var(--slate-200);
       border-radius: var(--radius-md);
       box-shadow: var(--shadow-sm);
+    }
+
+    .review-card.is-unmatched {
+      border-color: var(--amber-200);
+      box-shadow: 0 0 0 2px rgba(242, 218, 176, .35);
+    }
+
+    .review-card.is-processing {
+      opacity: .72;
     }
 
     .review-visual {
@@ -1067,10 +1138,73 @@
       white-space: nowrap;
     }
 
+    .match-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 8px 0 0;
+    }
+
+    .match-badge {
+      display: inline-flex;
+      min-height: 22px;
+      padding: 3px 7px;
+      align-items: center;
+      color: var(--slate-600);
+      background: var(--slate-100);
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 780;
+      white-space: nowrap;
+    }
+
+    .match-badge.is-high {
+      color: var(--green-700);
+      background: var(--green-100);
+    }
+
+    .match-badge.is-medium {
+      color: #17627c;
+      background: #e2f3f8;
+    }
+
+    .match-badge.is-low,
+    .match-badge.is-unmatched {
+      color: var(--amber-700);
+      background: #fff0d6;
+    }
+
+    .match-reasons {
+      min-width: 0;
+      overflow: hidden;
+      color: var(--slate-500);
+      font-size: 10px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .attachment-row-select {
+      width: 100%;
+      min-height: 34px;
+      margin-top: 8px;
+      padding: 5px 8px;
+      color: var(--navy-950);
+      background: var(--white);
+      border: 1px solid var(--slate-300);
+      border-radius: 6px;
+      font-size: 11px;
+      outline: 0;
+    }
+
+    .attachment-row-select:focus {
+      border-color: var(--green-600);
+      box-shadow: 0 0 0 2px rgba(16, 131, 72, .1);
+    }
+
     .remove-attachment {
       position: absolute;
+      top: 176px;
       right: 7px;
-      bottom: 44px;
       color: var(--red-700);
       background: rgba(255, 255, 255, .94);
       border-color: var(--red-100);
@@ -1219,7 +1353,7 @@
       }
 
       .summary-bar {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
       }
 
       .excluded-summary {
@@ -1227,7 +1361,7 @@
         border-top: 1px solid var(--slate-200);
       }
 
-      .metric:nth-child(3) {
+      .metric:nth-child(4) {
         border-right: 0;
       }
     }
@@ -1302,9 +1436,13 @@
         border-right: 0;
       }
 
-      .metric:nth-child(3) {
-        grid-column: 1 / -1;
+      .metric:nth-child(3),
+      .metric:nth-child(4) {
         border-top: 1px solid var(--slate-200);
+      }
+
+      .metric:nth-child(4) {
+        border-right: 0;
       }
 
       .metric-value {
@@ -1502,6 +1640,10 @@
           <p class="metric-label">發票已找到</p>
           <p class="metric-value"><span id="invoiceProgress">0 / 0</span></p>
         </div>
+        <div class="metric">
+          <p class="metric-label">實體發票</p>
+          <p class="metric-value"><span id="physicalCount">0</span><small>筆</small></p>
+        </div>
         <div class="excluded-summary">
           <strong>銀行款項已自動排除</strong>
           <span id="excludedText">手續費 0 筆、現金回饋 0 筆</span>
@@ -1536,6 +1678,7 @@
         <table aria-describedby="tableHint">
           <colgroup>
             <col style="width:72px">
+            <col style="width:82px">
             <col style="width:130px">
             <col style="width:130px">
             <col style="width:300px">
@@ -1553,6 +1696,7 @@
                   <input class="checkbox" id="checkAll" type="checkbox">
                 </label>
               </th>
+              <th style="text-align:center">實體</th>
               <th>消費日</th>
               <th>入帳日</th>
               <th>商店／說明</th>
@@ -1589,24 +1733,26 @@
       <div class="review-head">
         <div>
           <h2>附件複查區</h2>
-          <p>選一筆消費再拖入收據；附件會在匯出時依「消費日期＋商店說明＋金額」自動改名。</p>
+          <p>一次拖入全部收據，程式會比較店家、日期、金額與幣別，自動放進最可能的消費並勾選。</p>
         </div>
         <span class="review-count" id="reviewCount">0 個附件</span>
       </div>
       <div class="receipt-drop-zone" id="receiptDropZone">
-        <div class="receipt-target-wrap">
-          <label for="receiptTarget">這張收據屬於哪一筆消費？</label>
-          <select class="receipt-target" id="receiptTarget"></select>
+        <div>
+          <p class="receipt-drop-title">把所有收據一次拖到這裡</p>
+          <p class="receipt-drop-copy">會自動讀取 PDF 文字；圖片則使用本機文字辨識，再依相似度配對。</p>
+          <span class="receipt-progress" id="receiptProgress"></span>
         </div>
         <button class="btn btn-primary" id="receiptPickButton" type="button">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M8.5 12.5 14 7a3 3 0 0 1 4.2 4.2l-7.4 7.4a5 5 0 0 1-7.1-7.1L11 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
           </svg>
-          選擇或拖入附件
+          選擇多個附件
         </button>
         <input class="sr-only" id="receiptInput" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple>
+        <input class="sr-only" id="rowReceiptInput" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple>
       </div>
-      <p class="drop-help">支援 JPG、PNG、WEBP、PDF。加入附件時會自動勾選該筆消費並加上刪除線；附件只保留到匯出前，請勿重新整理頁面。</p>
+      <p class="drop-help">支援 JPG、PNG、WEBP、PDF。配對不確定的檔案會保留在下方讓你改選；附件只保留到匯出前，請勿重新整理頁面。</p>
       <div class="review-grid" id="reviewGrid"></div>
     </section>
   </main>
@@ -1658,6 +1804,12 @@
         "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js",
         "https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"
       ];
+      const PDFJS_SOURCES = [
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
+        "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"
+      ];
+      const PDFJS_WORKER =
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
       const CURRENCIES = [
         "TWD", "JPY", "USD", "EUR", "KRW", "SGD", "HKD", "CNY",
         "GBP", "AUD", "CAD", "THB", "VND", "MYR", "PHP", "NZD",
@@ -1703,6 +1855,7 @@
         transactionCount: $("#transactionCount"),
         totalAmount: $("#totalAmount"),
         invoiceProgress: $("#invoiceProgress"),
+        physicalCount: $("#physicalCount"),
         excludedText: $("#excludedText"),
         allCount: $("#allCount"),
         missingCount: $("#missingCount"),
@@ -1723,9 +1876,10 @@
         reviewPanel: $("#reviewPanel"),
         reviewCount: $("#reviewCount"),
         receiptDropZone: $("#receiptDropZone"),
-        receiptTarget: $("#receiptTarget"),
+        receiptProgress: $("#receiptProgress"),
         receiptPickButton: $("#receiptPickButton"),
         receiptInput: $("#receiptInput"),
+        rowReceiptInput: $("#rowReceiptInput"),
         reviewGrid: $("#reviewGrid"),
         toast: $("#toast")
       };
@@ -1742,6 +1896,7 @@
         previewUrl: "",
         attachments: [],
         attachmentTargetId: "",
+        attachmentProcessing: false,
         statementYear: new Date().getFullYear()
       };
 
@@ -2244,6 +2399,7 @@
                 ...record,
                 id: makeId(`${record.sourcePage}-${record.rawIndex}`),
                 invoiceFound: false,
+                physicalInvoice: false,
                 note: "",
                 __duplicateKey: duplicateKey,
                 __rawRef: record
@@ -2303,7 +2459,11 @@
         try {
           const saved = JSON.parse(localStorage.getItem(key));
           if (!saved || !Array.isArray(saved.rows) || !saved.rows.length) return false;
-          state.rows = saved.rows;
+          state.rows = saved.rows.map((row) => ({
+            ...row,
+            invoiceFound: Boolean(row.invoiceFound),
+            physicalInvoice: Boolean(row.physicalInvoice)
+          }));
           state.excluded = Array.isArray(saved.excluded) ? saved.excluded : [];
           state.rawText = saved.rawText || "";
           state.statementYear = Number(saved.statementYear) || state.statementYear;
@@ -2316,11 +2476,13 @@
 
       function getCounts() {
         const found = state.rows.filter((row) => row.invoiceFound).length;
+        const physical = state.rows.filter((row) => row.physicalInvoice).length;
         const missing = state.rows.length - found;
         const fees = state.excluded.filter((row) => row.reason === "fee");
         const cashback = state.excluded.filter((row) => row.reason === "cashback");
         return {
           found,
+          physical,
           missing,
           fees,
           cashback,
@@ -2374,7 +2536,11 @@
         return `${Number.isInteger(amount) ? amount : amount.toFixed(2)}${currency}`;
       }
 
-      function filenameBase(row) {
+      function filenameBase(row, item) {
+        if (!row) {
+          const originalBase = String(item?.file?.name || "附件").replace(/\.[^.]+$/, "");
+          return safeFilename(`未配對_${originalBase}`).slice(0, 90);
+        }
         const date = row.transactionDate || `${state.statementYear}-未填日期`;
         const description = safeFilename(row.description || "未填商店").slice(0, 60);
         return safeFilename(`${date}_${description}_${filenameAmount(row)}`);
@@ -2384,7 +2550,7 @@
         const used = new Map();
         return state.attachments.map((item) => {
           const row = state.rows.find((candidate) => candidate.id === item.rowId);
-          const base = filenameBase(row || {});
+          const base = filenameBase(row, item);
           const extension = fileExtension(item.file.name, item.file.type);
           const key = `${base}.${extension}`.toLocaleLowerCase();
           const count = (used.get(key) || 0) + 1;
@@ -2397,42 +2563,241 @@
         });
       }
 
+      function normalizeMatchText(value) {
+        return String(value ?? "")
+          .normalize("NFKC")
+          .toUpperCase()
+          .replace(/[‐‑‒–—―－_*/|\\()[\]{}:：,，.。]+/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
+      function compactMatchText(value) {
+        return normalizeMatchText(value).replace(/\s+/g, "");
+      }
+
+      function extractMoneyValues(value) {
+        const text = String(value ?? "")
+          .normalize("NFKC")
+          .replace(/\b[A-Z0-9]{3,}(?:-[A-Z0-9]{2,}){1,}\b/gi, " ")
+          .replace(/\b\d{2,4}[-/.年]\d{1,2}[-/.月]\d{1,2}日?\b/g, " ");
+        const pattern = /(?:NT\$|TWD|US\$|USD|JPY|¥|￥|\$)?\s*(-?\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|-?\d+(?:\.\d{1,2})?)/gi;
+        const values = [];
+        let match;
+        while ((match = pattern.exec(text))) {
+          const number = Number(match[1].replace(/,/g, ""));
+          if (Number.isFinite(number)) values.push(number);
+        }
+        return values;
+      }
+
+      function hasMoneyValue(values, target) {
+        const number = Number(target);
+        if (!Number.isFinite(number)) return false;
+        const tolerance = Math.max(.011, Math.abs(number) * .00001);
+        return values.some((value) => Math.abs(value - number) <= tolerance);
+      }
+
+      function receiptCurrencyMatches(value, currency) {
+        const text = normalizeMatchText(value);
+        if (!currency) return false;
+        if (currency === "JPY") return /\bJPY\b|[¥￥]|円/.test(String(value));
+        if (currency === "TWD") return /\bTWD\b|NT\$|新台幣|臺幣|台幣/i.test(String(value));
+        if (currency === "USD") {
+          const withoutTwd = String(value).replace(/NT\$/gi, "");
+          return /\bUSD\b|US\$|\$/.test(withoutTwd);
+        }
+        return text.includes(currency);
+      }
+
+      function pushReceiptDate(target, year, month, day) {
+        let normalizedYear = Number(year);
+        const normalizedMonth = Number(month);
+        const normalizedDay = Number(day);
+        if (normalizedYear > 0 && normalizedYear < 1911) normalizedYear += 1911;
+        const date = new Date(Date.UTC(normalizedYear, normalizedMonth - 1, normalizedDay));
+        if (
+          normalizedYear >= 2000 &&
+          normalizedYear <= 2100 &&
+          date.getUTCFullYear() === normalizedYear &&
+          date.getUTCMonth() === normalizedMonth - 1 &&
+          date.getUTCDate() === normalizedDay
+        ) {
+          target.push(date.getTime());
+        }
+      }
+
+      function extractReceiptDates(value) {
+        const text = String(value ?? "").normalize("NFKC");
+        const dates = [];
+        let match;
+        const numericPattern = /(\d{2,4})\s*(?:[-/.年])\s*(\d{1,2})\s*(?:[-/.月])\s*(\d{1,2})\s*日?/g;
+        while ((match = numericPattern.exec(text))) {
+          pushReceiptDate(dates, match[1], match[2], match[3]);
+        }
+
+        const months = {
+          JAN: 1, JANUARY: 1, FEB: 2, FEBRUARY: 2, MAR: 3, MARCH: 3,
+          APR: 4, APRIL: 4, MAY: 5, JUN: 6, JUNE: 6, JUL: 7, JULY: 7,
+          AUG: 8, AUGUST: 8, SEP: 9, SEPT: 9, SEPTEMBER: 9, OCT: 10,
+          OCTOBER: 10, NOV: 11, NOVEMBER: 11, DEC: 12, DECEMBER: 12
+        };
+        const englishText = text.toUpperCase();
+        const monthFirst = new RegExp(`\\b(${Object.keys(months).join("|")})\\s+(\\d{1,2}),?\\s+(\\d{4})\\b`, "g");
+        while ((match = monthFirst.exec(englishText))) {
+          pushReceiptDate(dates, match[3], months[match[1]], match[2]);
+        }
+        const dayFirst = new RegExp(`\\b(\\d{1,2})\\s+(${Object.keys(months).join("|")})\\s+(\\d{4})\\b`, "g");
+        while ((match = dayFirst.exec(englishText))) {
+          pushReceiptDate(dates, match[3], months[match[2]], match[1]);
+        }
+        return [...new Set(dates)];
+      }
+
+      function isoDateTime(value) {
+        const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!match) return null;
+        return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+      }
+
+      function merchantAliasScore(description, receiptText) {
+        const rowText = normalizeMatchText(description);
+        const documentText = normalizeMatchText(receiptText);
+        const groups = [
+          { row: ["UBER"], receipt: ["UBER", "UBERJPCO", "UBER JAPAN"] },
+          { row: ["GODADDY"], receipt: ["GODADDY", "GO DADDY"] },
+          { row: ["H10", "FOLLOW UP", "HELIUM"], receipt: ["HELIUM10", "HELIUM 10", "PIXEL LABS", "FOLLOW UP"] },
+          { row: ["APPLE", "蘋果"], receipt: ["APPLE"] },
+          { row: ["KKDAY", "酷遊天", "KKGIFT"], receipt: ["KKDAY", "KKGIFT", "KK GIFT", "酷遊天"] }
+        ];
+        return groups.some((group) =>
+          group.row.some((signal) => rowText.includes(signal)) &&
+          group.receipt.some((signal) => documentText.includes(signal))
+        );
+      }
+
+      function scoreReceiptMatch(receipt, row) {
+        const combined = `${receipt.fileName || ""}\n${receipt.text || ""}`;
+        const normalized = normalizeMatchText(combined);
+        const compact = compactMatchText(combined);
+        const description = normalizeMatchText(row.description);
+        const numbers = extractMoneyValues(combined);
+        const reasons = [];
+        let score = 0;
+
+        const hasForeign = row.foreignAmount !== "" &&
+          row.foreignAmount !== null &&
+          row.foreignAmount !== undefined &&
+          Number.isFinite(Number(row.foreignAmount));
+        if (hasForeign && hasMoneyValue(numbers, row.foreignAmount)) {
+          score += 58;
+          reasons.push(`原幣 ${formatDecimal(row.foreignAmount)} 相符`);
+          if (receiptCurrencyMatches(combined, row.currency)) {
+            score += 7;
+            reasons.push(`${row.currency} 相符`);
+          }
+        } else if (hasMoneyValue(numbers, row.amount)) {
+          score += hasForeign ? 38 : 58;
+          reasons.push(`金額 ${formatInteger(row.amount)} 相符`);
+        }
+
+        const documentDates = extractReceiptDates(combined);
+        const rowDates = [isoDateTime(row.transactionDate), isoDateTime(row.postingDate)]
+          .filter((value) => value !== null);
+        if (documentDates.length && rowDates.length) {
+          const dayDifference = Math.min(...documentDates.flatMap((left) =>
+            rowDates.map((right) => Math.round(Math.abs(left - right) / 86400000))
+          ));
+          if (dayDifference === 0) {
+            score += 22;
+            reasons.push("日期相同");
+          } else if (dayDifference === 1) {
+            score += 18;
+            reasons.push("日期差 1 天");
+          } else if (dayDifference <= 2) {
+            score += 12;
+            reasons.push(`日期差 ${dayDifference} 天`);
+          } else if (dayDifference <= 4) {
+            score += 5;
+          }
+        }
+
+        if (merchantAliasScore(description, combined)) {
+          score += 26;
+          reasons.push("店家關鍵字相符");
+        } else {
+          const identifierMatches = (description.match(/\d{6,}/g) || [])
+            .filter((identifier) => compact.includes(identifier));
+          if (identifierMatches.length) {
+            score += 24;
+            reasons.push("交易編號相符");
+          }
+
+          const ignored = new Set([
+            "TRIP", "HELP", "COM", "COMPANY", "LIMITED", "LTD", "INC",
+            "TAIWAN", "ENTERPRI", "PAY", "EC", "THE"
+          ]);
+          const tokens = description.split(/\s+/)
+            .filter((token) => token.length >= 3 && !ignored.has(token) && !/^\d+$/.test(token));
+          const matchedTokens = tokens.filter((token) => normalized.includes(token));
+          const tokenScore = Math.min(24, matchedTokens.length * 8);
+          if (tokenScore) {
+            score += tokenScore;
+            reasons.push("店家文字相符");
+          }
+
+          const compactDescription = compactMatchText(row.description);
+          if (
+            compactDescription.length >= 4 &&
+            compactDescription.length <= 30 &&
+            compact.includes(compactDescription)
+          ) {
+            score += 18;
+            reasons.push("商店名稱相符");
+          }
+        }
+
+        if (normalized.includes(CARD_TAIL)) score += 2;
+        return { score, reasons: [...new Set(reasons)] };
+      }
+
+      function matchLevel(score) {
+        if (score >= 82) return "high";
+        if (score >= 62) return "medium";
+        if (score >= 44) return "low";
+        return "unmatched";
+      }
+
+      function rowOptionText(row) {
+        const hasForeign = row.foreignAmount !== "" &&
+          row.foreignAmount !== null &&
+          row.foreignAmount !== undefined;
+        const amount = hasForeign
+          ? `${formatDecimal(row.foreignAmount)} ${row.currency || "原幣"}`
+          : `${formatInteger(row.amount)} TWD`;
+        return `${row.invoiceFound ? "✓ " : ""}${row.transactionDate}｜${row.description || "未填商店"}｜${amount}`;
+      }
+
       function renderReview() {
         dom.reviewPanel.classList.toggle("is-visible", state.rows.length > 0);
-        dom.reviewCount.textContent = `${state.attachments.length} 個附件`;
-
-        const previousTarget = state.attachmentTargetId || dom.receiptTarget.value;
-        dom.receiptTarget.innerHTML = state.rows.map((row) => {
-          const hasForeign = row.foreignAmount !== "" &&
-            row.foreignAmount !== null &&
-            row.foreignAmount !== undefined;
-          const amount = hasForeign
-            ? `${formatDecimal(row.foreignAmount)} ${row.currency || "原幣"}`
-            : `${formatInteger(row.amount)} TWD`;
-          return `<option value="${escapeHtml(row.id)}">${row.invoiceFound ? "✓ " : ""}${escapeHtml(row.transactionDate)}｜${escapeHtml(row.description || "未填商店")}｜${escapeHtml(amount)}</option>`;
-        }).join("");
-
-        const targetExists = state.rows.some((row) => row.id === previousTarget);
-        if (targetExists) {
-          dom.receiptTarget.value = previousTarget;
-          state.attachmentTargetId = previousTarget;
-        } else {
-          const preferred = state.rows.find((row) => !row.invoiceFound) || state.rows[0];
-          dom.receiptTarget.value = preferred?.id || "";
-          state.attachmentTargetId = preferred?.id || "";
-        }
+        const unmatchedCount = state.attachments.filter((item) => !item.rowId && item.status !== "processing").length;
+        dom.reviewCount.textContent = unmatchedCount
+          ? `${state.attachments.length} 個附件・${unmatchedCount} 個待確認`
+          : `${state.attachments.length} 個附件`;
 
         const namedAttachments = buildAttachmentNames();
         if (!namedAttachments.length) {
           dom.reviewGrid.innerHTML = `
             <div class="review-empty">
-              還沒有附件。請先選擇上方的消費，再按「選擇或拖入附件」。
+              還沒有附件。把所有收據一次拖到上方，程式會自動配對。
             </div>`;
           return;
         }
 
         dom.reviewGrid.innerHTML = namedAttachments.map((item) => {
           const isImage = /^image\//i.test(item.file.type) || /\.(jpe?g|png|webp)$/i.test(item.file.name);
+          const isProcessing = item.status === "processing";
+          const isUnmatched = !item.rowId && !isProcessing;
           const visual = isImage
             ? `<img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.row?.description || "收據附件")}">`
             : `<span class="review-file-icon">
@@ -2442,13 +2807,33 @@
                 </svg>
                 PDF
               </span>`;
+          const level = isProcessing ? "processing" : (item.matchLevel || (item.rowId ? "medium" : "unmatched"));
+          const badgeText = isProcessing
+            ? "讀取中"
+            : level === "high" ? "高信心自動配對"
+              : level === "medium" ? "自動配對"
+                : level === "low" ? "低信心・請確認"
+                  : item.rowId ? "手動指定" : "尚未配對";
+          const options = [
+            `<option value="">— 尚未配對 —</option>`,
+            ...state.rows.map((row) =>
+              `<option value="${escapeHtml(row.id)}" ${row.id === item.rowId ? "selected" : ""}>${escapeHtml(rowOptionText(row))}</option>`
+            )
+          ].join("");
           return `
-            <article class="review-card" data-attachment-id="${escapeHtml(item.id)}">
+            <article class="review-card ${isUnmatched ? "is-unmatched" : ""} ${isProcessing ? "is-processing" : ""}" data-attachment-id="${escapeHtml(item.id)}">
               <button class="review-visual open-attachment" type="button" aria-label="開啟 ${escapeHtml(item.exportName)}">${visual}</button>
               <div class="review-copy">
-                <p class="review-merchant">${escapeHtml(item.row?.transactionDate || "")}｜${escapeHtml(item.row?.description || "未配對")}</p>
+                <p class="review-merchant">${isProcessing ? "正在讀取文字…" : `${escapeHtml(item.row?.transactionDate || "")}${item.row ? "｜" : ""}${escapeHtml(item.row?.description || "需要手動確認")}`}</p>
                 <p class="review-filename">${escapeHtml(item.exportName)}</p>
                 <p class="review-source">原檔：${escapeHtml(item.file.name)}</p>
+                <div class="match-line">
+                  <span class="match-badge is-${escapeHtml(level)}">${escapeHtml(badgeText)}</span>
+                  <span class="match-reasons">${escapeHtml((item.matchReasons || []).join("、"))}</span>
+                </div>
+                <select class="attachment-row-select" aria-label="調整 ${escapeHtml(item.file.name)} 的配對消費" ${isProcessing ? "disabled" : ""}>
+                  ${options}
+                </select>
               </div>
               <button class="icon-btn remove-attachment" type="button" aria-label="移除 ${escapeHtml(item.exportName)}">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -2462,11 +2847,17 @@
       function rowTemplate(row) {
         const attachmentCount = attachmentCountForRow(row.id);
         return `
-          <tr data-id="${escapeHtml(row.id)}" class="${row.invoiceFound ? "is-found" : "is-missing"}">
+          <tr data-id="${escapeHtml(row.id)}" class="${row.invoiceFound ? "is-found" : "is-missing"} ${row.physicalInvoice ? "is-physical" : ""}">
             <td class="check-cell">
               <label>
                 <span class="sr-only">${row.invoiceFound ? "取消發票已找到" : "標記發票已找到"}：${escapeHtml(row.description)}</span>
                 <input class="checkbox row-check" type="checkbox" ${row.invoiceFound ? "checked" : ""}>
+              </label>
+            </td>
+            <td class="physical-cell">
+              <label class="physical-label">
+                <input class="physical-checkbox" type="checkbox" ${row.physicalInvoice ? "checked" : ""}>
+                <span>${row.physicalInvoice ? "實體" : "標記"}</span>
               </label>
             </td>
             <td>
@@ -2514,6 +2905,7 @@
         dom.transactionCount.textContent = state.rows.length;
         dom.totalAmount.textContent = formatInteger(counts.total);
         dom.invoiceProgress.textContent = `${counts.found} / ${state.rows.length}`;
+        dom.physicalCount.textContent = counts.physical;
         dom.allCount.textContent = `(${state.rows.length})`;
         dom.missingCount.textContent = `(${counts.missing})`;
         dom.foundCount.textContent = `(${counts.found})`;
@@ -2525,7 +2917,7 @@
         dom.tableScroll.style.display = filteredRows.length ? "" : "none";
         dom.workspace.classList.toggle("is-visible", state.rows.length > 0);
         dom.exportButton.classList.toggle("is-visible", state.rows.length > 0);
-        dom.exportButton.disabled = state.rows.length === 0 || state.busy;
+        dom.exportButton.disabled = state.rows.length === 0 || state.busy || state.attachmentProcessing;
 
         dom.checkAll.checked = state.rows.length > 0 && counts.found === state.rows.length;
         dom.checkAll.indeterminate = counts.found > 0 && counts.found < state.rows.length;
@@ -2549,7 +2941,7 @@
         dom.recognizeButton.disabled = isBusy || state.files.length === 0;
         dom.changeFileButton.disabled = isBusy;
         dom.statementYear.disabled = isBusy;
-        dom.exportButton.disabled = isBusy || state.rows.length === 0;
+        dom.exportButton.disabled = isBusy || state.attachmentProcessing || state.rows.length === 0;
         dom.recognizeButton.lastChild.textContent = isBusy ? " 辨識中…" : " 開始辨識";
       }
 
@@ -2783,6 +3175,14 @@
           return;
         }
 
+        if (event.target.classList.contains("physical-checkbox")) {
+          row.physicalInvoice = event.target.checked;
+          if (row.physicalInvoice) row.invoiceFound = true;
+          render();
+          persistState();
+          return;
+        }
+
         const field = event.target.dataset.field;
         if (!field) return;
         let value = event.target.value;
@@ -2801,6 +3201,7 @@
         dom.transactionCount.textContent = state.rows.length;
         dom.totalAmount.textContent = formatInteger(counts.total);
         dom.invoiceProgress.textContent = `${counts.found} / ${state.rows.length}`;
+        dom.physicalCount.textContent = counts.physical;
         dom.allCount.textContent = `(${state.rows.length})`;
         dom.missingCount.textContent = `(${counts.missing})`;
         dom.foundCount.textContent = `(${counts.found})`;
@@ -2840,6 +3241,7 @@
           currency: "",
           foreignAmount: "",
           invoiceFound: false,
+          physicalInvoice: false,
           note: "",
           raw: "手動新增",
           sourcePage: 0
@@ -2907,6 +3309,7 @@
           const detailRows = [
             [
               "發票狀態",
+              "發票類型",
               "消費日期",
               "入帳日期",
               "商店／說明",
@@ -2919,6 +3322,7 @@
             ],
             ...state.rows.map((row) => [
               row.invoiceFound ? "已找到" : "尚未找到",
+              row.physicalInvoice ? "實體發票" : (attachmentCountForRow(row.id) ? "電子附件" : ""),
               slashDate(row.transactionDate),
               slashDate(row.postingDate),
               row.description,
@@ -2941,6 +3345,7 @@
             ["實際消費筆數", state.rows.length],
             ["實際報帳金額", counts.total],
             ["發票已找到", counts.found],
+            ["實體發票", counts.physical],
             ["尚缺發票", counts.missing],
             ["附件數量", state.attachments.length],
             ["已排除國外交易手續費", `${counts.fees.length} 筆`],
@@ -2952,6 +3357,7 @@
           const detailSheet = XLSX.utils.aoa_to_sheet(detailRows);
           detailSheet["!cols"] = [
             { wch: 12 },
+            { wch: 12 },
             { wch: 13 },
             { wch: 13 },
             { wch: 34 },
@@ -2962,7 +3368,7 @@
             { wch: 30 },
             { wch: 54 }
           ];
-          detailSheet["!autofilter"] = { ref: `A1:J${detailRows.length}` };
+          detailSheet["!autofilter"] = { ref: `A1:K${detailRows.length}` };
 
           const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
           summarySheet["!cols"] = [{ wch: 28 }, { wch: 42 }];
@@ -2997,21 +3403,171 @@
           console.error(error);
           showNotice("匯出元件載入失敗，請確認目前有網路後再按一次「匯出整理包」。", "error");
         } finally {
-          dom.exportButton.disabled = state.rows.length === 0;
+          dom.exportButton.disabled = state.rows.length === 0 || state.busy;
           dom.exportButton.lastChild.textContent = " 匯出整理包";
         }
       }
 
-      function attachReceiptFiles(fileList, rowId = dom.receiptTarget.value) {
-        const row = state.rows.find((item) => item.id === rowId);
-        if (!row) {
-          toast("請先選擇一筆消費");
-          return;
-        }
-        const files = [...fileList].filter((file) =>
+      function filterReceiptFiles(fileList) {
+        return [...fileList].filter((file) =>
           /^(image\/jpeg|image\/png|image\/webp|application\/pdf)$/i.test(file.type) ||
           /\.(jpe?g|png|webp|pdf)$/i.test(file.name)
         );
+      }
+
+      async function createReceiptOcrWorker() {
+        const Tesseract = await loadScriptFromSources("Tesseract", TESSERACT_SOURCES);
+        const worker = await Tesseract.createWorker(["chi_tra", "eng", "jpn"], Tesseract.OEM.LSTM_ONLY, {
+          workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
+          corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1",
+          langPath: "https://tessdata.projectnaptha.com/4.0.0",
+          logger(message) {
+            if (message.status === "recognizing text") {
+              dom.receiptProgress.textContent =
+                `正在辨識圖片文字 ${Math.round(Number(message.progress || 0) * 100)}%`;
+            }
+          }
+        });
+        await worker.setParameters({
+          tessedit_pageseg_mode: Tesseract.PSM.AUTO,
+          preserve_interword_spaces: "1",
+          user_defined_dpi: "300"
+        });
+        return worker;
+      }
+
+      async function extractPdfAttachmentText(file, getOcrWorker) {
+        const pdfjsLib = await loadScriptFromSources("pdfjsLib", PDFJS_SOURCES);
+        pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+        const data = new Uint8Array(await file.arrayBuffer());
+        const loadingTask = pdfjsLib.getDocument({
+          data,
+          cMapUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/",
+          cMapPacked: true,
+          standardFontDataUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/standard_fonts/"
+        });
+        const pdf = await loadingTask.promise;
+        const pageTexts = [];
+        const pageCount = Math.min(pdf.numPages, 4);
+
+        for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
+          const page = await pdf.getPage(pageNumber);
+          const textContent = await page.getTextContent();
+          pageTexts.push(textContent.items.map((item) => item.str || "").join(" "));
+        }
+
+        let text = pageTexts.join("\n");
+        const needsOcr = compactMatchText(text).length < 40 || extractMoneyValues(text).length === 0;
+        if (needsOcr) {
+          const page = await pdf.getPage(1);
+          const viewport = page.getViewport({ scale: 2 });
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.ceil(viewport.width);
+          canvas.height = Math.ceil(viewport.height);
+          const context = canvas.getContext("2d");
+          await page.render({ canvasContext: context, viewport }).promise;
+          const worker = await getOcrWorker();
+          const result = await worker.recognize(canvas);
+          text += `\n${result.data.text || ""}`;
+        }
+        return text;
+      }
+
+      async function extractAttachmentText(file, getOcrWorker) {
+        const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+        if (isPdf) return extractPdfAttachmentText(file, getOcrWorker);
+        const canvas = await prepareImage(file);
+        const worker = await getOcrWorker();
+        const result = await worker.recognize(canvas);
+        return result.data.text || "";
+      }
+
+      function markRowFromAttachment(rowId) {
+        const row = state.rows.find((candidate) => candidate.id === rowId);
+        if (row) row.invoiceFound = true;
+      }
+
+      function releaseRowIfEmpty(rowId) {
+        const row = state.rows.find((candidate) => candidate.id === rowId);
+        if (
+          row &&
+          !row.physicalInvoice &&
+          !state.attachments.some((item) => item.rowId === rowId)
+        ) {
+          row.invoiceFound = false;
+        }
+      }
+
+      function setAttachmentRow(attachmentId, rowId, match = null) {
+        const item = state.attachments.find((candidate) => candidate.id === attachmentId);
+        if (!item) return;
+        const previousRowId = item.rowId;
+        item.rowId = rowId || "";
+        item.status = rowId ? "matched" : "unmatched";
+        item.matchScore = match?.score ?? 0;
+        item.matchLevel = match?.level || (rowId ? "manual" : "unmatched");
+        item.matchReasons = match?.reasons || (rowId ? ["手動指定"] : []);
+        if (rowId) markRowFromAttachment(rowId);
+        if (previousRowId && previousRowId !== rowId) releaseRowIfEmpty(previousRowId);
+      }
+
+      function autoMatchAttachmentBatch(items) {
+        const batchIds = new Set(items.map((item) => item.id));
+        const occupiedRows = new Set(
+          state.attachments
+            .filter((item) => !batchIds.has(item.id) && item.rowId)
+            .map((item) => item.rowId)
+        );
+        const candidates = [];
+
+        items.forEach((item) => {
+          state.rows.forEach((row) => {
+            if (occupiedRows.has(row.id)) return;
+            const result = scoreReceiptMatch({
+              fileName: item.file.name,
+              text: item.extractedText
+            }, row);
+            candidates.push({ item, row, ...result });
+          });
+        });
+        candidates.sort((left, right) => right.score - left.score);
+
+        const assignedItems = new Set();
+        const assignedRows = new Set();
+        candidates.forEach((candidate) => {
+          if (
+            candidate.score < 44 ||
+            assignedItems.has(candidate.item.id) ||
+            assignedRows.has(candidate.row.id)
+          ) return;
+          const level = matchLevel(candidate.score);
+          setAttachmentRow(candidate.item.id, candidate.row.id, {
+            score: candidate.score,
+            level,
+            reasons: candidate.reasons
+          });
+          assignedItems.add(candidate.item.id);
+          assignedRows.add(candidate.row.id);
+        });
+
+        items.forEach((item) => {
+          if (assignedItems.has(item.id)) return;
+          const best = candidates.find((candidate) => candidate.item.id === item.id);
+          item.rowId = "";
+          item.status = "unmatched";
+          item.matchScore = best?.score || 0;
+          item.matchLevel = "unmatched";
+          item.matchReasons = best?.reasons || [];
+        });
+      }
+
+      function attachReceiptFilesManually(fileList, rowId) {
+        const row = state.rows.find((item) => item.id === rowId);
+        const files = filterReceiptFiles(fileList);
+        if (!row) {
+          toast("找不到要夾檔的消費");
+          return;
+        }
         if (!files.length) {
           toast("附件只支援 JPG、PNG、WEBP 或 PDF");
           return;
@@ -3021,14 +3577,93 @@
             id: makeId("attachment"),
             rowId: row.id,
             file,
-            url: URL.createObjectURL(file)
+            url: URL.createObjectURL(file),
+            status: "matched",
+            matchLevel: "manual",
+            matchReasons: ["從該筆消費夾檔"]
           });
         });
         row.invoiceFound = true;
-        state.attachmentTargetId = row.id;
         render();
         persistState();
         toast(`已替「${row.description || "這筆消費"}」加入 ${files.length} 個附件`);
+      }
+
+      async function autoAttachReceiptFiles(fileList) {
+        if (state.attachmentProcessing) {
+          toast("上一批附件還在配對中");
+          return;
+        }
+        const files = filterReceiptFiles(fileList);
+        if (!files.length) {
+          toast("附件只支援 JPG、PNG、WEBP 或 PDF");
+          return;
+        }
+
+        state.attachmentProcessing = true;
+        dom.receiptDropZone.classList.add("is-processing");
+        dom.receiptPickButton.disabled = true;
+        dom.exportButton.disabled = true;
+
+        const items = files.map((file) => ({
+          id: makeId("attachment"),
+          rowId: "",
+          file,
+          url: URL.createObjectURL(file),
+          status: "processing",
+          matchLevel: "processing",
+          matchReasons: [],
+          extractedText: ""
+        }));
+        state.attachments.push(...items);
+        renderReview();
+
+        let ocrWorker = null;
+        const getOcrWorker = async () => {
+          if (!ocrWorker) ocrWorker = await createReceiptOcrWorker();
+          return ocrWorker;
+        };
+
+        try {
+          for (let index = 0; index < items.length; index += 1) {
+            const item = items[index];
+            dom.receiptProgress.textContent =
+              `正在讀取第 ${index + 1} / ${items.length} 份：${item.file.name}`;
+            try {
+              item.extractedText = await extractAttachmentText(item.file, getOcrWorker);
+            } catch (error) {
+              console.error(`附件文字讀取失敗：${item.file.name}`, error);
+              item.extractedText = item.file.name;
+              item.matchReasons = ["文字讀取不完整"];
+            }
+          }
+
+          autoMatchAttachmentBatch(items);
+          const matched = items.filter((item) => item.rowId).length;
+          const unmatched = items.length - matched;
+          dom.receiptProgress.textContent =
+            unmatched ? `已自動配對 ${matched} 份，${unmatched} 份請在下方確認` : `已自動配對全部 ${matched} 份附件`;
+          render();
+          persistState();
+          showNotice(
+            unmatched
+              ? `附件比對完成：已自動配對 <strong>${matched} 份</strong>，另有 <strong>${unmatched} 份</strong>需要在複查區手動選擇。`
+              : `附件比對完成：<strong>${matched} 份</strong>都已放入最可能的消費並自動勾選。`,
+            unmatched ? "warning" : "success"
+          );
+        } finally {
+          if (ocrWorker) {
+            try {
+              await ocrWorker.terminate();
+            } catch {
+              // OCR worker cleanup never blocks matching results.
+            }
+          }
+          state.attachmentProcessing = false;
+          dom.receiptDropZone.classList.remove("is-processing");
+          dom.receiptPickButton.disabled = false;
+          dom.exportButton.disabled = state.rows.length === 0;
+        }
       }
 
       function removeAttachment(id) {
@@ -3036,8 +3671,7 @@
         if (!item) return;
         URL.revokeObjectURL(item.url);
         state.attachments = state.attachments.filter((candidate) => candidate.id !== id);
-        const row = state.rows.find((candidate) => candidate.id === item.rowId);
-        if (row && !attachmentCountForRow(row.id)) row.invoiceFound = false;
+        if (item.rowId) releaseRowIfEmpty(item.rowId);
         render();
         persistState();
         toast("附件已移除");
@@ -3114,7 +3748,8 @@
           currency: row[4],
           foreignAmount: row[5],
           note: row[6],
-          invoiceFound: [0].includes(index),
+          invoiceFound: [0, 2].includes(index),
+          physicalInvoice: index === 2,
           country: "",
           transactionMMDD: row[0].slice(5).replace("-", "/"),
           postingMMDD: row[1].slice(5).replace("-", "/"),
@@ -3201,8 +3836,7 @@
         if (attachButton) {
           const rowId = attachButton.closest("tr[data-id]").dataset.id;
           state.attachmentTargetId = rowId;
-          dom.receiptTarget.value = rowId;
-          dom.receiptInput.click();
+          dom.rowReceiptInput.click();
           return;
         }
         const button = event.target.closest(".delete-row");
@@ -3212,13 +3846,14 @@
 
       dom.addRowButton.addEventListener("click", addRow);
       dom.exportButton.addEventListener("click", exportPackage);
-      dom.receiptTarget.addEventListener("change", () => {
-        state.attachmentTargetId = dom.receiptTarget.value;
-      });
       dom.receiptPickButton.addEventListener("click", () => dom.receiptInput.click());
       dom.receiptInput.addEventListener("change", () => {
-        attachReceiptFiles(dom.receiptInput.files);
+        autoAttachReceiptFiles(dom.receiptInput.files);
         dom.receiptInput.value = "";
+      });
+      dom.rowReceiptInput.addEventListener("change", () => {
+        attachReceiptFilesManually(dom.rowReceiptInput.files, state.attachmentTargetId);
+        dom.rowReceiptInput.value = "";
       });
       ["dragenter", "dragover"].forEach((eventName) => {
         dom.receiptDropZone.addEventListener(eventName, (event) => {
@@ -3233,7 +3868,17 @@
         });
       });
       dom.receiptDropZone.addEventListener("drop", (event) => {
-        attachReceiptFiles(event.dataTransfer.files);
+        autoAttachReceiptFiles(event.dataTransfer.files);
+      });
+      dom.reviewGrid.addEventListener("change", (event) => {
+        const select = event.target.closest(".attachment-row-select");
+        if (!select) return;
+        const card = select.closest("[data-attachment-id]");
+        if (!card) return;
+        setAttachmentRow(card.dataset.attachmentId, select.value);
+        render();
+        persistState();
+        toast(select.value ? "附件配對已更新" : "附件已改為未配對");
       });
       dom.reviewGrid.addEventListener("click", (event) => {
         const card = event.target.closest("[data-attachment-id]");
@@ -3278,11 +3923,25 @@
             id: item.id,
             rowId: item.rowId,
             name: item.file.name,
+            status: item.status,
+            matchScore: item.matchScore,
+            matchLevel: item.matchLevel,
+            matchReasons: item.matchReasons,
             exportName: buildAttachmentNames().find((candidate) => candidate.id === item.id)?.exportName
           }))
         }),
         loadDemo,
-        attachFiles: (rowId, files) => attachReceiptFiles(files, rowId),
+        attachFiles: (rowId, files) => attachReceiptFilesManually(files, rowId),
+        autoMatchFiles: autoAttachReceiptFiles,
+        scoreReceiptMatch,
+        setPhysicalInvoice: (rowId, value) => {
+          const row = state.rows.find((candidate) => candidate.id === rowId);
+          if (!row) return false;
+          row.physicalInvoice = Boolean(value);
+          if (row.physicalInvoice) row.invoiceFound = true;
+          render();
+          return true;
+        },
         getAttachmentNames: () => buildAttachmentNames().map((item) => item.exportName),
         exportPackage
       };

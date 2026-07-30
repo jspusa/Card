@@ -1,0 +1,3292 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>公司卡報帳整理｜尾號 2388</title>
+  <style>
+    :root {
+      --navy-950: #081a33;
+      --navy-900: #0b2142;
+      --navy-700: #28425f;
+      --slate-600: #617086;
+      --slate-500: #7a8798;
+      --slate-300: #cdd6e1;
+      --slate-200: #dde4ec;
+      --slate-100: #edf1f5;
+      --slate-50: #f6f8fb;
+      --white: #ffffff;
+      --green-700: #0c703c;
+      --green-600: #108348;
+      --green-500: #179b58;
+      --green-100: #dff5e8;
+      --green-50: #f2fbf6;
+      --amber-700: #8a5a08;
+      --amber-200: #f2dab0;
+      --amber-50: #fffaf1;
+      --red-700: #a33b3b;
+      --red-100: #fae4e4;
+      --shadow-sm: 0 1px 2px rgba(8, 26, 51, .04);
+      --shadow-md: 0 12px 32px rgba(8, 26, 51, .08);
+      --radius-sm: 7px;
+      --radius-md: 11px;
+      --radius-lg: 16px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC",
+              "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-width: 320px;
+      background: var(--slate-50);
+    }
+
+    body {
+      margin: 0;
+      color: var(--navy-950);
+      background: var(--slate-50);
+      font-family: var(--font);
+      font-size: 15px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      color: inherit;
+    }
+
+    svg {
+      display: block;
+    }
+
+    .sr-only {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 68px;
+      padding: 0 28px;
+      background: rgba(255, 255, 255, .96);
+      border-bottom: 1px solid var(--slate-200);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      color: var(--white);
+      background: var(--navy-900);
+      border-radius: 10px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 21px;
+      font-weight: 760;
+      letter-spacing: -.025em;
+    }
+
+    .card-tail {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 0 12px;
+      color: var(--navy-700);
+      background: var(--white);
+      border: 1px solid var(--slate-200);
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 680;
+      white-space: nowrap;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .shell {
+      width: min(1540px, 100%);
+      margin: 0 auto;
+      padding: 22px 24px 108px;
+    }
+
+    .surface {
+      background: var(--white);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .ingest-grid {
+      display: grid;
+      grid-template-columns: minmax(420px, 1.65fr) minmax(280px, .75fr);
+      overflow: hidden;
+    }
+
+    .upload-pane {
+      min-width: 0;
+      padding: 20px;
+      border-right: 1px solid var(--slate-200);
+    }
+
+    .drop-zone {
+      position: relative;
+      display: grid;
+      min-height: 246px;
+      padding: 24px;
+      place-items: center;
+      overflow: hidden;
+      color: var(--navy-700);
+      text-align: center;
+      background: var(--slate-50);
+      border: 1.5px dashed #9cabbc;
+      border-radius: var(--radius-md);
+      outline: 0;
+      cursor: pointer;
+      transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+
+    .drop-zone:hover,
+    .drop-zone:focus-visible,
+    .drop-zone.is-dragging {
+      background: #f3faf6;
+      border-color: var(--green-600);
+      box-shadow: 0 0 0 3px rgba(16, 131, 72, .11);
+    }
+
+    .drop-zone.has-file {
+      min-height: 246px;
+      padding: 16px;
+      cursor: default;
+    }
+
+    .drop-placeholder {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+    }
+
+    .upload-icon {
+      display: grid;
+      width: 54px;
+      height: 54px;
+      margin-bottom: 4px;
+      place-items: center;
+      color: var(--green-700);
+      background: var(--green-100);
+      border-radius: 50%;
+    }
+
+    .drop-title {
+      margin: 0;
+      color: var(--navy-950);
+      font-size: 18px;
+      font-weight: 740;
+      letter-spacing: -.015em;
+    }
+
+    .drop-subtitle {
+      margin: 0;
+      color: var(--slate-600);
+      font-size: 14px;
+    }
+
+    .drop-link {
+      color: var(--green-700);
+      font-weight: 700;
+    }
+
+    .file-preview {
+      display: none;
+      width: 100%;
+      grid-template-columns: 138px minmax(0, 1fr);
+      gap: 18px;
+      align-items: center;
+      text-align: left;
+    }
+
+    .has-file .file-preview {
+      display: grid;
+    }
+
+    .has-file .drop-placeholder {
+      display: none;
+    }
+
+    .preview-frame {
+      display: grid;
+      width: 138px;
+      height: 178px;
+      place-items: center;
+      overflow: hidden;
+      background: var(--white);
+      border: 1px solid var(--slate-200);
+      border-radius: 9px;
+      box-shadow: 0 8px 22px rgba(8, 26, 51, .09);
+    }
+
+    .preview-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .preview-fallback {
+      display: none;
+      color: var(--slate-500);
+    }
+
+    .file-copy {
+      min-width: 0;
+    }
+
+    .file-name {
+      margin: 0 0 3px;
+      overflow: hidden;
+      color: var(--navy-950);
+      font-size: 16px;
+      font-weight: 720;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-meta {
+      margin: 0 0 18px;
+      color: var(--slate-600);
+      font-size: 13px;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 7px;
+      color: var(--navy-700);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .progress-track {
+      height: 7px;
+      overflow: hidden;
+      background: var(--slate-100);
+      border-radius: 999px;
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      background: var(--green-600);
+      border-radius: inherit;
+      transition: width .2s ease;
+    }
+
+    .file-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .rules-pane {
+      padding: 24px 26px;
+      background: var(--white);
+    }
+
+    .rules-pane h2 {
+      margin: 0 0 19px;
+      font-size: 16px;
+      font-weight: 760;
+      letter-spacing: -.01em;
+    }
+
+    .rule-list {
+      display: grid;
+      gap: 17px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .rule-item {
+      display: grid;
+      grid-template-columns: 25px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      color: var(--navy-700);
+      font-size: 14px;
+    }
+
+    .rule-check {
+      display: grid;
+      width: 22px;
+      height: 22px;
+      place-items: center;
+      color: var(--green-700);
+      background: var(--green-50);
+      border: 1px solid #86caa4;
+      border-radius: 50%;
+    }
+
+    .year-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 24px;
+      padding-top: 19px;
+      border-top: 1px solid var(--slate-200);
+    }
+
+    .year-row label {
+      color: var(--slate-600);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .year-input {
+      width: 92px;
+      min-height: 38px;
+      padding: 7px 10px;
+      color: var(--navy-950);
+      background: var(--white);
+      border: 1px solid var(--slate-300);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 680;
+      text-align: center;
+      outline: 0;
+    }
+
+    .year-input:focus {
+      border-color: var(--green-600);
+      box-shadow: 0 0 0 3px rgba(16, 131, 72, .1);
+    }
+
+    .privacy-note {
+      display: flex;
+      gap: 8px;
+      margin-top: 18px;
+      color: var(--slate-500);
+      font-size: 12px;
+    }
+
+    .notice {
+      display: none;
+      align-items: flex-start;
+      gap: 11px;
+      margin-top: 14px;
+      padding: 12px 14px;
+      color: var(--navy-700);
+      background: var(--green-50);
+      border: 1px solid #caead7;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+    }
+
+    .notice.is-visible {
+      display: flex;
+    }
+
+    .notice.is-warning {
+      color: #6f4a09;
+      background: var(--amber-50);
+      border-color: var(--amber-200);
+    }
+
+    .notice.is-error {
+      color: var(--red-700);
+      background: #fff7f7;
+      border-color: var(--red-100);
+    }
+
+    .notice strong {
+      color: inherit;
+    }
+
+    .workspace {
+      display: none;
+      margin-top: 18px;
+    }
+
+    .workspace.is-visible {
+      display: block;
+    }
+
+    .summary-bar {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(140px, 1fr)) minmax(260px, 1.35fr);
+      border-bottom: 1px solid var(--slate-200);
+    }
+
+    .metric {
+      padding: 18px 20px;
+      border-right: 1px solid var(--slate-200);
+    }
+
+    .metric-label {
+      margin: 0 0 4px;
+      color: var(--slate-600);
+      font-size: 12px;
+      font-weight: 680;
+    }
+
+    .metric-value {
+      margin: 0;
+      color: var(--navy-950);
+      font-size: 24px;
+      font-weight: 780;
+      letter-spacing: -.03em;
+    }
+
+    .metric-value small {
+      margin-left: 3px;
+      color: var(--slate-600);
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+
+    .excluded-summary {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 16px 20px;
+      color: var(--slate-600);
+      background: #fbfcfd;
+      font-size: 13px;
+    }
+
+    .excluded-summary strong {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--navy-700);
+      font-weight: 720;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--slate-200);
+    }
+
+    .filters,
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .filter-btn {
+      min-height: 34px;
+      padding: 6px 11px;
+      color: var(--slate-600);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 680;
+      cursor: pointer;
+    }
+
+    .filter-btn:hover {
+      color: var(--navy-950);
+      background: var(--slate-50);
+    }
+
+    .filter-btn.is-active {
+      color: var(--green-700);
+      background: var(--green-50);
+      border-color: #b9dfc9;
+    }
+
+    .search-wrap {
+      position: relative;
+      width: min(220px, 30vw);
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      top: 50%;
+      left: 10px;
+      color: var(--slate-500);
+      pointer-events: none;
+      transform: translateY(-50%);
+    }
+
+    .search-input {
+      width: 100%;
+      min-height: 36px;
+      padding: 7px 10px 7px 34px;
+      color: var(--navy-950);
+      background: var(--white);
+      border: 1px solid var(--slate-300);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      outline: 0;
+    }
+
+    .search-input:focus {
+      border-color: var(--green-600);
+      box-shadow: 0 0 0 3px rgba(16, 131, 72, .09);
+    }
+
+    .table-scroll {
+      overflow: auto;
+      overscroll-behavior-inline: contain;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1240px;
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: fixed;
+    }
+
+    th,
+    td {
+      border-right: 1px solid var(--slate-200);
+      border-bottom: 1px solid var(--slate-200);
+      vertical-align: middle;
+    }
+
+    th:last-child,
+    td:last-child {
+      border-right: 0;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      height: 44px;
+      padding: 8px 10px;
+      color: var(--navy-700);
+      background: #f8fafc;
+      font-size: 12px;
+      font-weight: 760;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    tbody td {
+      height: 52px;
+      padding: 6px;
+      background: var(--white);
+      transition: background .16s ease;
+    }
+
+    tbody tr.is-found td {
+      background: var(--green-50);
+    }
+
+    tbody tr.is-found td:nth-child(n+2):nth-child(-n+8) .cell-input {
+      color: var(--slate-500);
+      text-decoration: line-through;
+      text-decoration-color: #7ca88f;
+      text-decoration-thickness: 1.5px;
+    }
+
+    tbody tr.is-missing td {
+      background: var(--amber-50);
+    }
+
+    tbody tr:hover td {
+      background: #f7fafc;
+    }
+
+    tbody tr.is-found:hover td {
+      background: #ecf8f1;
+    }
+
+    tbody tr.is-missing:hover td {
+      background: #fff7e8;
+    }
+
+    .check-cell,
+    .check-head {
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      width: 72px;
+      text-align: center;
+    }
+
+    .check-head {
+      z-index: 6;
+    }
+
+    .checkbox {
+      display: inline-grid;
+      width: 21px;
+      height: 21px;
+      margin: 0;
+      appearance: none;
+      place-items: center;
+      background: var(--white);
+      border: 1.5px solid #9cabbc;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .checkbox::after {
+      width: 9px;
+      height: 5px;
+      content: "";
+      border: solid var(--white);
+      border-width: 0 0 2px 2px;
+      opacity: 0;
+      transform: translateY(-1px) rotate(-45deg);
+    }
+
+    .checkbox:checked {
+      background: var(--green-600);
+      border-color: var(--green-600);
+    }
+
+    .checkbox:checked::after {
+      opacity: 1;
+    }
+
+    .checkbox:indeterminate {
+      background: var(--green-600);
+      border-color: var(--green-600);
+    }
+
+    .checkbox:indeterminate::after {
+      width: 9px;
+      height: 0;
+      border-width: 0 0 2px;
+      opacity: 1;
+      transform: none;
+    }
+
+    .checkbox:focus-visible {
+      outline: 3px solid rgba(16, 131, 72, .2);
+      outline-offset: 2px;
+    }
+
+    .cell-input {
+      width: 100%;
+      height: 36px;
+      padding: 7px 9px;
+      color: var(--navy-950);
+      background: rgba(255, 255, 255, .75);
+      border: 1px solid transparent;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: 0;
+    }
+
+    .cell-input:hover {
+      border-color: var(--slate-300);
+    }
+
+    .cell-input:focus {
+      background: var(--white);
+      border-color: var(--green-600);
+      box-shadow: 0 0 0 2px rgba(16, 131, 72, .1);
+    }
+
+    .cell-input.amount {
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    .empty-results {
+      display: none;
+      padding: 38px 20px;
+      color: var(--slate-600);
+      text-align: center;
+      border-bottom: 1px solid var(--slate-200);
+    }
+
+    .empty-results.is-visible {
+      display: block;
+    }
+
+    .table-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      min-height: 54px;
+      padding: 10px 14px;
+      color: var(--slate-600);
+      background: #fbfcfd;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+      font-size: 13px;
+    }
+
+    .footer-hint {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 38px;
+      padding: 8px 13px;
+      color: var(--navy-700);
+      background: var(--white);
+      border: 1px solid var(--slate-300);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 720;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: transform .12s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--slate-50);
+      border-color: #afbbc9;
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn:focus-visible {
+      outline: 3px solid rgba(16, 131, 72, .18);
+      outline-offset: 2px;
+    }
+
+    .btn:disabled {
+      color: #9aa5b3;
+      background: #f2f4f7;
+      border-color: var(--slate-200);
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      color: var(--white);
+      background: var(--green-600);
+      border-color: var(--green-600);
+      box-shadow: 0 6px 16px rgba(16, 131, 72, .15);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--green-700);
+      border-color: var(--green-700);
+    }
+
+    .btn-quiet {
+      min-height: 34px;
+      padding: 6px 10px;
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+    }
+
+    .btn-quiet:hover:not(:disabled) {
+      background: var(--slate-50);
+      border-color: var(--slate-200);
+    }
+
+    .btn-danger {
+      color: var(--red-700);
+    }
+
+    .icon-btn {
+      display: inline-grid;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      place-items: center;
+      color: var(--slate-600);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .icon-btn:hover {
+      color: var(--red-700);
+      background: #fff7f7;
+      border-color: var(--red-100);
+    }
+
+    .row-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    .attach-row {
+      position: relative;
+    }
+
+    .attach-row.has-attachment {
+      color: var(--green-700);
+      background: var(--green-100);
+      border-color: #b9dfc9;
+    }
+
+    .attachment-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      display: grid;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      place-items: center;
+      color: var(--white);
+      background: var(--green-600);
+      border: 2px solid var(--white);
+      border-radius: 999px;
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .review-panel {
+      display: none;
+      margin-top: 18px;
+      overflow: hidden;
+    }
+
+    .review-panel.is-visible {
+      display: block;
+    }
+
+    .review-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 20px;
+      border-bottom: 1px solid var(--slate-200);
+    }
+
+    .review-head h2 {
+      margin: 0 0 4px;
+      font-size: 18px;
+      letter-spacing: -.015em;
+    }
+
+    .review-head p {
+      margin: 0;
+      color: var(--slate-600);
+      font-size: 13px;
+    }
+
+    .review-count {
+      flex: 0 0 auto;
+      padding: 5px 10px;
+      color: var(--green-700);
+      background: var(--green-50);
+      border: 1px solid #b9dfc9;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 760;
+    }
+
+    .receipt-drop-zone {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+      margin: 16px 20px 0;
+      padding: 16px;
+      background: var(--slate-50);
+      border: 1.5px dashed #9cabbc;
+      border-radius: var(--radius-md);
+      transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+
+    .receipt-drop-zone.is-dragging {
+      background: #f3faf6;
+      border-color: var(--green-600);
+      box-shadow: 0 0 0 3px rgba(16, 131, 72, .11);
+    }
+
+    .receipt-target-wrap {
+      display: grid;
+      gap: 6px;
+    }
+
+    .receipt-target-wrap label {
+      color: var(--navy-700);
+      font-size: 12px;
+      font-weight: 760;
+    }
+
+    .receipt-target {
+      width: 100%;
+      min-height: 40px;
+      padding: 7px 10px;
+      color: var(--navy-950);
+      background: var(--white);
+      border: 1px solid var(--slate-300);
+      border-radius: var(--radius-sm);
+      outline: 0;
+    }
+
+    .receipt-target:focus {
+      border-color: var(--green-600);
+      box-shadow: 0 0 0 3px rgba(16, 131, 72, .09);
+    }
+
+    .drop-help {
+      margin: 0 20px;
+      padding: 9px 16px 0;
+      color: var(--slate-600);
+      font-size: 12px;
+    }
+
+    .review-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
+      padding: 16px 20px 20px;
+    }
+
+    .review-empty {
+      grid-column: 1 / -1;
+      padding: 28px 18px;
+      color: var(--slate-600);
+      text-align: center;
+      background: #fbfcfd;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-md);
+    }
+
+    .review-card {
+      position: relative;
+      overflow: hidden;
+      background: var(--white);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .review-visual {
+      display: grid;
+      width: 100%;
+      height: 168px;
+      place-items: center;
+      overflow: hidden;
+      color: var(--slate-500);
+      background: #edf1f5;
+      border: 0;
+      cursor: zoom-in;
+    }
+
+    .review-visual img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .review-file-icon {
+      display: grid;
+      gap: 8px;
+      justify-items: center;
+      font-size: 12px;
+      font-weight: 760;
+    }
+
+    .review-copy {
+      padding: 12px;
+    }
+
+    .review-merchant {
+      margin: 0 34px 3px 0;
+      overflow: hidden;
+      font-size: 13px;
+      font-weight: 760;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .review-filename {
+      margin: 0;
+      color: var(--green-700);
+      font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      overflow-wrap: anywhere;
+    }
+
+    .review-source {
+      margin: 5px 0 0;
+      color: var(--slate-500);
+      font-size: 11px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .remove-attachment {
+      position: absolute;
+      right: 7px;
+      bottom: 44px;
+      color: var(--red-700);
+      background: rgba(255, 255, 255, .94);
+      border-color: var(--red-100);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .floating-export {
+      position: fixed;
+      right: 28px;
+      bottom: 24px;
+      z-index: 25;
+      display: none;
+      min-height: 50px;
+      padding: 11px 18px;
+      font-size: 15px;
+      border-radius: 10px;
+      box-shadow: 0 14px 34px rgba(8, 26, 51, .19);
+    }
+
+    .floating-export.is-visible {
+      display: inline-flex;
+    }
+
+    dialog {
+      width: min(760px, calc(100vw - 32px));
+      max-height: min(760px, calc(100vh - 48px));
+      padding: 0;
+      overflow: hidden;
+      color: var(--navy-950);
+      background: var(--white);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 28px 80px rgba(8, 26, 51, .24);
+    }
+
+    dialog::backdrop {
+      background: rgba(8, 26, 51, .42);
+      backdrop-filter: blur(3px);
+    }
+
+    .dialog-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--slate-200);
+    }
+
+    .dialog-head h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 760;
+    }
+
+    .dialog-body {
+      padding: 18px 20px;
+      overflow: auto;
+    }
+
+    .dialog-copy {
+      margin: 0 0 12px;
+      color: var(--slate-600);
+      font-size: 13px;
+    }
+
+    .raw-text {
+      width: 100%;
+      min-height: 380px;
+      padding: 12px;
+      color: var(--navy-950);
+      background: #fbfcfd;
+      border: 1px solid var(--slate-300);
+      border-radius: var(--radius-sm);
+      font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      resize: vertical;
+      outline: 0;
+    }
+
+    .raw-text:focus {
+      border-color: var(--green-600);
+      box-shadow: 0 0 0 3px rgba(16, 131, 72, .09);
+    }
+
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 14px 20px;
+      border-top: 1px solid var(--slate-200);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      z-index: 80;
+      max-width: min(440px, calc(100vw - 32px));
+      padding: 11px 15px;
+      color: var(--white);
+      background: var(--navy-950);
+      border-radius: 9px;
+      box-shadow: var(--shadow-md);
+      font-size: 13px;
+      font-weight: 650;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 14px);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+
+    .toast.is-visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    @media (max-width: 980px) {
+      .topbar {
+        padding: 0 18px;
+      }
+
+      .shell {
+        padding: 16px 14px 104px;
+      }
+
+      .ingest-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .upload-pane {
+        border-right: 0;
+        border-bottom: 1px solid var(--slate-200);
+      }
+
+      .rules-pane {
+        padding: 20px;
+      }
+
+      .rule-list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .year-row {
+        margin-top: 18px;
+      }
+
+      .summary-bar {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .excluded-summary {
+        grid-column: 1 / -1;
+        border-top: 1px solid var(--slate-200);
+      }
+
+      .metric:nth-child(3) {
+        border-right: 0;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .topbar {
+        min-height: 60px;
+        padding: 0 14px;
+      }
+
+      .brand {
+        gap: 9px;
+      }
+
+      .brand-mark {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+      }
+
+      .brand h1 {
+        font-size: 17px;
+      }
+
+      .card-tail {
+        min-height: 32px;
+        padding: 0 9px;
+        font-size: 12px;
+      }
+
+      .shell {
+        padding: 12px 10px 98px;
+      }
+
+      .upload-pane,
+      .rules-pane {
+        padding: 13px;
+      }
+
+      .drop-zone,
+      .drop-zone.has-file {
+        min-height: 220px;
+      }
+
+      .file-preview {
+        grid-template-columns: 96px minmax(0, 1fr);
+        gap: 13px;
+      }
+
+      .preview-frame {
+        width: 96px;
+        height: 130px;
+      }
+
+      .rule-list {
+        grid-template-columns: 1fr;
+      }
+
+      .privacy-note {
+        display: none;
+      }
+
+      .summary-bar {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .metric {
+        padding: 14px;
+      }
+
+      .metric:nth-child(2) {
+        border-right: 0;
+      }
+
+      .metric:nth-child(3) {
+        grid-column: 1 / -1;
+        border-top: 1px solid var(--slate-200);
+      }
+
+      .metric-value {
+        font-size: 21px;
+      }
+
+      .toolbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .filters {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+      }
+
+      .toolbar-actions {
+        display: grid;
+        grid-template-columns: 1fr auto;
+      }
+
+      .search-wrap {
+        width: 100%;
+      }
+
+      .table-footer {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .floating-export {
+        right: 14px;
+        bottom: 16px;
+        left: 14px;
+        width: calc(100% - 28px);
+      }
+
+      .review-head {
+        display: grid;
+      }
+
+      .receipt-drop-zone {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M4 7.5h16M5.5 5h13A1.5 1.5 0 0 1 20 6.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5v-11A1.5 1.5 0 0 1 5.5 5Z" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M7 14h4M7 16.8h6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <h1>公司卡報帳整理</h1>
+    </div>
+    <div class="top-actions">
+      <span class="card-tail" aria-label="目前只辨識信用卡尾號 2388">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M3 9h18" stroke="currentColor" stroke-width="1.8"/>
+        </svg>
+        尾號 2388
+      </span>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="surface ingest-grid" aria-label="帳單上傳與辨識規則">
+      <div class="upload-pane">
+        <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-describedby="dropHint">
+          <input class="sr-only" id="fileInput" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+
+          <div class="drop-placeholder">
+            <span class="upload-icon" aria-hidden="true">
+              <svg width="27" height="27" viewBox="0 0 24 24" fill="none">
+                <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M5 13.5H4A2.5 2.5 0 0 0 1.5 16v2A2.5 2.5 0 0 0 4 20.5h16a2.5 2.5 0 0 0 2.5-2.5v-2a2.5 2.5 0 0 0-2.5-2.5h-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <p class="drop-title">拖曳帳單照片到這裡</p>
+            <p class="drop-subtitle" id="dropHint">或<span class="drop-link">點擊選擇圖片</span>（可一次選多頁）</p>
+          </div>
+
+          <div class="file-preview">
+            <div class="preview-frame">
+              <img id="previewImage" alt="已選擇的帳單預覽">
+              <span class="preview-fallback" id="previewFallback" aria-hidden="true">
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 3.5h10l4 4v13H5v-17Z" stroke="currentColor" stroke-width="1.6"/>
+                  <path d="M15 3.5v4h4M8 13h8M8 16h6" stroke="currentColor" stroke-width="1.6"/>
+                </svg>
+              </span>
+            </div>
+            <div class="file-copy">
+              <p class="file-name" id="fileName">—</p>
+              <p class="file-meta" id="fileMeta">—</p>
+              <div class="progress-label">
+                <span id="progressText">等待辨識</span>
+                <span id="progressPercent">0%</span>
+              </div>
+              <div class="progress-track" aria-hidden="true">
+                <div class="progress-bar" id="progressBar"></div>
+              </div>
+              <div class="file-actions">
+                <button class="btn btn-primary" id="recognizeButton" type="button">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5 3H3v4M19 3h2v4M5 21H3v-4M19 21h2v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M7.5 12h9M12 7.5v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  </svg>
+                  開始辨識
+                </button>
+                <button class="btn" id="changeFileButton" type="button">更換圖片</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="rules-pane">
+        <h2>辨識規則</h2>
+        <ul class="rule-list">
+          <li class="rule-item">
+            <span class="rule-check" aria-hidden="true">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                <path d="m6 12.5 4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span>只保留尾號 <strong>2388</strong> 的實際刷卡消費</span>
+          </li>
+          <li class="rule-item">
+            <span class="rule-check" aria-hidden="true">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                <path d="m6 12.5 4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span>排除現金回饋與所有負數款項</span>
+          </li>
+          <li class="rule-item">
+            <span class="rule-check" aria-hidden="true">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                <path d="m6 12.5 4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span>排除國外交易手續費，保留原幣資料核對</span>
+          </li>
+        </ul>
+        <div class="year-row">
+          <label for="statementYear">帳單年度</label>
+          <input class="year-input" id="statementYear" type="number" min="2020" max="2100" step="1">
+        </div>
+        <p class="privacy-note">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v10H5V10Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+          </svg>
+          帳單在你的瀏覽器本機辨識，不會上傳到伺服器。
+        </p>
+      </aside>
+    </section>
+
+    <div class="notice" id="notice" role="status" aria-live="polite">
+      <span id="noticeIcon" aria-hidden="true">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+          <path d="m8 12.5 2.5 2.5L16 9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span id="noticeText"></span>
+    </div>
+
+    <section class="surface workspace" id="workspace" aria-label="報帳明細">
+      <div class="summary-bar">
+        <div class="metric">
+          <p class="metric-label">本期消費</p>
+          <p class="metric-value"><span id="transactionCount">0</span><small>筆</small></p>
+        </div>
+        <div class="metric">
+          <p class="metric-label">報帳金額</p>
+          <p class="metric-value"><span id="totalAmount">0</span><small>元</small></p>
+        </div>
+        <div class="metric">
+          <p class="metric-label">發票已找到</p>
+          <p class="metric-value"><span id="invoiceProgress">0 / 0</span></p>
+        </div>
+        <div class="excluded-summary">
+          <strong>銀行款項已自動排除</strong>
+          <span id="excludedText">手續費 0 筆、現金回饋 0 筆</span>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="filters" role="group" aria-label="發票篩選">
+          <button class="filter-btn is-active" type="button" data-filter="all">全部 <span id="allCount">(0)</span></button>
+          <button class="filter-btn" type="button" data-filter="missing">尚未找到發票 <span id="missingCount">(0)</span></button>
+          <button class="filter-btn" type="button" data-filter="found">發票已找到 <span id="foundCount">(0)</span></button>
+        </div>
+        <div class="toolbar-actions">
+          <label class="search-wrap">
+            <span class="sr-only">搜尋店家或備註</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.8"/>
+              <path d="m15.5 15.5 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            <input class="search-input" id="searchInput" type="search" placeholder="搜尋店家或備註">
+          </label>
+          <button class="btn btn-quiet" id="rawButton" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 5h16M4 10h16M4 15h10M4 20h7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+            辨識原文
+          </button>
+        </div>
+      </div>
+
+      <div class="table-scroll" id="tableScroll">
+        <table aria-describedby="tableHint">
+          <colgroup>
+            <col style="width:72px">
+            <col style="width:130px">
+            <col style="width:130px">
+            <col style="width:300px">
+            <col style="width:125px">
+            <col style="width:105px">
+            <col style="width:135px">
+            <col style="width:230px">
+            <col style="width:104px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="check-head">
+                <label>
+                  <span class="sr-only">全部標記為發票已找到</span>
+                  <input class="checkbox" id="checkAll" type="checkbox">
+                </label>
+              </th>
+              <th>消費日</th>
+              <th>入帳日</th>
+              <th>商店／說明</th>
+              <th style="text-align:right">台幣金額</th>
+              <th>原幣幣別</th>
+              <th style="text-align:right">原幣金額</th>
+              <th>備註</th>
+              <th>夾檔</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-results" id="emptyResults">目前篩選條件下沒有資料。</div>
+
+      <div class="table-footer">
+        <span class="footer-hint" id="tableHint">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M12 11v5M12 8h.01" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+          </svg>
+          所有欄位都能直接修改；勾選與編輯會自動保存在這台電腦。
+        </span>
+        <button class="btn" id="addRowButton" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          新增一筆
+        </button>
+      </div>
+    </section>
+
+    <section class="surface review-panel" id="reviewPanel" aria-label="附件複查區">
+      <div class="review-head">
+        <div>
+          <h2>附件複查區</h2>
+          <p>選一筆消費再拖入收據；附件會在匯出時依「消費日期＋商店說明＋金額」自動改名。</p>
+        </div>
+        <span class="review-count" id="reviewCount">0 個附件</span>
+      </div>
+      <div class="receipt-drop-zone" id="receiptDropZone">
+        <div class="receipt-target-wrap">
+          <label for="receiptTarget">這張收據屬於哪一筆消費？</label>
+          <select class="receipt-target" id="receiptTarget"></select>
+        </div>
+        <button class="btn btn-primary" id="receiptPickButton" type="button">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M8.5 12.5 14 7a3 3 0 0 1 4.2 4.2l-7.4 7.4a5 5 0 0 1-7.1-7.1L11 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          選擇或拖入附件
+        </button>
+        <input class="sr-only" id="receiptInput" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple>
+      </div>
+      <p class="drop-help">支援 JPG、PNG、WEBP、PDF。加入附件時會自動勾選該筆消費並加上刪除線；附件只保留到匯出前，請勿重新整理頁面。</p>
+      <div class="review-grid" id="reviewGrid"></div>
+    </section>
+  </main>
+
+  <button class="btn btn-primary floating-export" id="exportButton" type="button" disabled>
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 3h10l4 4v14H5V3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+      <path d="M15 3v4h4M8 11l5 6M13 11l-5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+    </svg>
+    匯出整理包
+  </button>
+
+  <dialog id="rawDialog">
+    <div class="dialog-head">
+      <h2>辨識原文</h2>
+      <button class="icon-btn" id="closeRawButton" type="button" aria-label="關閉">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="dialog-body">
+      <p class="dialog-copy">若照片文字辨識不完整，可直接修正下方內容，再重新套用尾號 2388 的篩選規則。</p>
+      <textarea class="raw-text" id="rawText" spellcheck="false" placeholder="完成圖片辨識後，原始文字會顯示在這裡。"></textarea>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn" id="cancelRawButton" type="button">取消</button>
+      <button class="btn btn-primary" id="reparseButton" type="button">套用修正文字</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const CARD_TAIL = "2388";
+      const STORAGE_PREFIX = "company-card-expense-2388:v2:";
+      const TESSERACT_SOURCES = [
+        "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js",
+        "https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js"
+      ];
+      const XLSX_SOURCES = [
+        "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
+        "https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"
+      ];
+      const JSZIP_SOURCES = [
+        "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js",
+        "https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"
+      ];
+      const CURRENCIES = [
+        "TWD", "JPY", "USD", "EUR", "KRW", "SGD", "HKD", "CNY",
+        "GBP", "AUD", "CAD", "THB", "VND", "MYR", "PHP", "NZD",
+        "CHF", "SEK", "NOK", "DKK", "IDR"
+      ];
+      const COUNTRY_CURRENCY = {
+        JP: "JPY",
+        US: "USD",
+        TW: "TWD",
+        KR: "KRW",
+        SG: "SGD",
+        HK: "HKD",
+        CN: "CNY",
+        GB: "GBP",
+        AU: "AUD",
+        CA: "CAD",
+        TH: "THB",
+        VN: "VND",
+        MY: "MYR",
+        PH: "PHP",
+        NZ: "NZD"
+      };
+
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+      const dom = {
+        dropZone: $("#dropZone"),
+        fileInput: $("#fileInput"),
+        previewImage: $("#previewImage"),
+        previewFallback: $("#previewFallback"),
+        fileName: $("#fileName"),
+        fileMeta: $("#fileMeta"),
+        progressText: $("#progressText"),
+        progressPercent: $("#progressPercent"),
+        progressBar: $("#progressBar"),
+        recognizeButton: $("#recognizeButton"),
+        changeFileButton: $("#changeFileButton"),
+        statementYear: $("#statementYear"),
+        notice: $("#notice"),
+        noticeText: $("#noticeText"),
+        workspace: $("#workspace"),
+        transactionCount: $("#transactionCount"),
+        totalAmount: $("#totalAmount"),
+        invoiceProgress: $("#invoiceProgress"),
+        excludedText: $("#excludedText"),
+        allCount: $("#allCount"),
+        missingCount: $("#missingCount"),
+        foundCount: $("#foundCount"),
+        searchInput: $("#searchInput"),
+        tableScroll: $("#tableScroll"),
+        tableBody: $("#tableBody"),
+        emptyResults: $("#emptyResults"),
+        checkAll: $("#checkAll"),
+        rawButton: $("#rawButton"),
+        rawDialog: $("#rawDialog"),
+        rawText: $("#rawText"),
+        closeRawButton: $("#closeRawButton"),
+        cancelRawButton: $("#cancelRawButton"),
+        reparseButton: $("#reparseButton"),
+        addRowButton: $("#addRowButton"),
+        exportButton: $("#exportButton"),
+        reviewPanel: $("#reviewPanel"),
+        reviewCount: $("#reviewCount"),
+        receiptDropZone: $("#receiptDropZone"),
+        receiptTarget: $("#receiptTarget"),
+        receiptPickButton: $("#receiptPickButton"),
+        receiptInput: $("#receiptInput"),
+        reviewGrid: $("#reviewGrid"),
+        toast: $("#toast")
+      };
+
+      const state = {
+        files: [],
+        fingerprint: "",
+        rows: [],
+        excluded: [],
+        rawText: "",
+        filter: "all",
+        search: "",
+        busy: false,
+        previewUrl: "",
+        attachments: [],
+        attachmentTargetId: "",
+        statementYear: new Date().getFullYear()
+      };
+
+      let toastTimer = 0;
+      let persistTimer = 0;
+
+      function iconForNotice(type) {
+        if (type === "error") {
+          return `
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M12 7.5v6M12 17h.01" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+            </svg>`;
+        }
+        if (type === "warning") {
+          return `
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+              <path d="M12 3.8 21 20H3L12 3.8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+              <path d="M12 9v5M12 17h.01" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+            </svg>`;
+        }
+        return `
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+            <path d="m8 12.5 2.5 2.5L16 9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>`;
+      }
+
+      function showNotice(message, type = "success") {
+        dom.notice.classList.remove("is-warning", "is-error");
+        if (type === "warning") dom.notice.classList.add("is-warning");
+        if (type === "error") dom.notice.classList.add("is-error");
+        $("#noticeIcon").innerHTML = iconForNotice(type);
+        dom.noticeText.innerHTML = message;
+        dom.notice.classList.add("is-visible");
+      }
+
+      function hideNotice() {
+        dom.notice.classList.remove("is-visible");
+      }
+
+      function toast(message) {
+        clearTimeout(toastTimer);
+        dom.toast.textContent = message;
+        dom.toast.classList.add("is-visible");
+        toastTimer = window.setTimeout(() => {
+          dom.toast.classList.remove("is-visible");
+        }, 2300);
+      }
+
+      function formatBytes(bytes) {
+        if (!Number.isFinite(bytes)) return "";
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+      }
+
+      function formatInteger(value) {
+        const number = Number(value);
+        return Number.isFinite(number)
+          ? Math.round(number).toLocaleString("zh-TW")
+          : "0";
+      }
+
+      function formatDecimal(value) {
+        if (value === "" || value === null || value === undefined) return "";
+        const number = Number(value);
+        if (!Number.isFinite(number)) return "";
+        return number.toLocaleString("en-US", {
+          maximumFractionDigits: 2,
+          minimumFractionDigits: Number.isInteger(number) ? 0 : 2
+        });
+      }
+
+      function cleanNumericInput(value) {
+        const cleaned = String(value ?? "")
+          .replace(/[，,\s]/g, "")
+          .replace(/[−–—]/g, "-")
+          .replace(/[Oo]/g, "0")
+          .replace(/[Il|]/g, "1")
+          .replace(/[Ss]/g, "5")
+          .replace(/[Bb]/g, "8")
+          .replace(/[^\d.-]/g, "");
+        const number = Number(cleaned);
+        return Number.isFinite(number) ? number : 0;
+      }
+
+      function makeId(seed = "") {
+        const random = Math.random().toString(36).slice(2, 8);
+        return `${Date.now().toString(36)}-${random}-${seed}`;
+      }
+
+      function hammingDistance(a, b) {
+        if (a.length !== b.length) return Infinity;
+        let distance = 0;
+        for (let index = 0; index < a.length; index += 1) {
+          if (a[index] !== b[index]) distance += 1;
+        }
+        return distance;
+      }
+
+      function normalizeOcrDigits(value) {
+        return String(value)
+          .replace(/[OoQＤ]/g, "0")
+          .replace(/[Il|!１]/g, "1")
+          .replace(/[Ss５]/g, "5")
+          .replace(/[Bb８]/g, "8")
+          .replace(/[２]/g, "2")
+          .replace(/[３]/g, "3")
+          .replace(/[４]/g, "4")
+          .replace(/[６]/g, "6")
+          .replace(/[７]/g, "7")
+          .replace(/[９]/g, "9");
+      }
+
+      function normalizeText(text) {
+        return String(text ?? "")
+          .replace(/\u3000/g, " ")
+          .replace(/[／]/g, "/")
+          .replace(/([0-9OoIl|])[﹒·](?=[0-9OoIl|]{3}(?:\D|$))/g, "$1,")
+          .replace(/[﹒·]/g, ".")
+          .replace(/[，]/g, ",")
+          .replace(/[（]/g, "(")
+          .replace(/[）]/g, ")")
+          .replace(/[：]/g, ":")
+          .replace(/[－﹣−–—]/g, "-")
+          .replace(/[﹍＿]/g, " ")
+          .replace(/[ \t]+/g, " ")
+          .replace(/\r/g, "")
+          .trim();
+      }
+
+      function parseDatePrefix(line) {
+        const normalized = normalizeText(line);
+        const match = normalized.match(
+          /^\s*([0-9OoIl|]{1,2})[\/|]([0-9OoIl|]{1,2})\s*[+·:;,-]?\s*([0-9OoIl|]{1,2})[\/|]([0-9OoIl|]{1,2})\s+/
+        );
+        if (!match) return null;
+
+        const values = match.slice(1).map((part) => Number(normalizeOcrDigits(part).replace(/\D/g, "")));
+        const [month1, day1, month2, day2] = values;
+        if (
+          month1 < 1 || month1 > 12 || day1 < 1 || day1 > 31 ||
+          month2 < 1 || month2 > 12 || day2 < 1 || day2 > 31
+        ) return null;
+
+        return {
+          transaction: `${String(month1).padStart(2, "0")}/${String(day1).padStart(2, "0")}`,
+          posting: `${String(month2).padStart(2, "0")}/${String(day2).padStart(2, "0")}`,
+          endIndex: match[0].length
+        };
+      }
+
+      function splitTransactionRecords(rawText) {
+        const lines = String(rawText ?? "")
+          .split(/\n+/)
+          .map(normalizeText)
+          .filter(Boolean);
+        /*
+         * 信用卡明細的每筆資料都以「消費日＋入帳日」起頭。刻意不把後續
+         * 無日期文字接到上一筆，避免前一張卡的最後一列誤吃到下一張卡的
+         * 「持卡人／卡號」標頭，進而把 0502 區段錯當成 2388。
+         */
+        return lines.filter((line) => Boolean(parseDatePrefix(line)));
+      }
+
+      function findCardTail(rest) {
+        const candidates = [];
+        const pattern = /[0-9OoQIl|SsBb]{4}/g;
+        let match;
+        while ((match = pattern.exec(rest)) !== null) {
+          const normalized = normalizeOcrDigits(match[0]).replace(/\D/g, "");
+          if (normalized.length === 4 && hammingDistance(normalized, CARD_TAIL) <= 1) {
+            candidates.push({
+              index: match.index,
+              length: match[0].length,
+              normalized
+            });
+          }
+        }
+        return candidates.at(-1) ?? null;
+      }
+
+      function extractNumberTokens(text) {
+        const pattern = /[-]?\s*(?:[0-9OoIlSsBb]{1,3}(?:,[0-9OoIlSsBb]{3})+|[0-9OoIlSsBb]+)(?:\.[0-9OoIlSsBb]{1,2})?/g;
+        const matches = [];
+        let match;
+        while ((match = pattern.exec(text)) !== null) {
+          const raw = match[0].trim();
+          if (!/[0-9]/.test(raw)) continue;
+          const normalized = normalizeOcrDigits(raw).replace(/,/g, "").replace(/\s/g, "");
+          const number = Number(normalized);
+          if (Number.isFinite(number)) {
+            matches.push({
+              raw,
+              value: number,
+              index: match.index,
+              end: match.index + match[0].length
+            });
+          }
+        }
+        return matches;
+      }
+
+      function parseForeignReference(text) {
+        const normalized = normalizeText(text).toUpperCase();
+        const currencyPattern = CURRENCIES.join("|");
+        let currency = "";
+        let amount = "";
+        let country = "";
+
+        const countryMatch = normalized.match(/\b(JP|US|TW|KR|SG|HK|CN|GB|AU|CA|TH|VN|MY|PH|NZ)\b/);
+        if (countryMatch) country = countryMatch[1];
+
+        const parentheticalAmountBefore = normalized.match(
+          new RegExp(`\\(\\s*([0-9][0-9,.]*)\\s*(${currencyPattern})\\s*\\)`, "i")
+        );
+        const parentheticalCurrencyBefore = normalized.match(
+          new RegExp(`\\(\\s*(${currencyPattern})\\s*([0-9][0-9,.]*)\\s*\\)`, "i")
+        );
+        const currencyBefore = normalized.match(
+          new RegExp(`\\b(${currencyPattern})\\b[^0-9-]{0,8}([0-9][0-9,.]*)(?!\\s*\\/)`, "i")
+        );
+        const amountBefore = normalized.match(
+          new RegExp(`([0-9][0-9,.]*)\\s*\\b(${currencyPattern})\\b`, "i")
+        );
+
+        if (parentheticalAmountBefore) {
+          amount = cleanNumericInput(parentheticalAmountBefore[1]);
+          currency = parentheticalAmountBefore[2].toUpperCase();
+        } else if (parentheticalCurrencyBefore) {
+          currency = parentheticalCurrencyBefore[1].toUpperCase();
+          amount = cleanNumericInput(parentheticalCurrencyBefore[2]);
+        } else if (amountBefore) {
+          amount = cleanNumericInput(amountBefore[1]);
+          currency = amountBefore[2].toUpperCase();
+        } else if (currencyBefore) {
+          currency = currencyBefore[1].toUpperCase();
+          amount = cleanNumericInput(currencyBefore[2]);
+        } else if (country && COUNTRY_CURRENCY[country]) {
+          currency = COUNTRY_CURRENCY[country];
+          const numberTokens = extractNumberTokens(normalized.replace(/\b\d{1,2}\/\d{1,2}\b/g, ""));
+          const plausible = numberTokens.filter((token) => token.value > 0);
+          if (plausible.length) amount = plausible[0].value;
+        }
+
+        return {
+          country,
+          currency,
+          amount: Number.isFinite(Number(amount)) && amount !== "" ? Number(amount) : ""
+        };
+      }
+
+      function chooseAmountWithoutTail(rest) {
+        const closingParenIndex = Math.max(rest.lastIndexOf(")"), rest.lastIndexOf("）"));
+        if (closingParenIndex >= 0) {
+          const afterParen = rest.slice(closingParenIndex + 1);
+          const afterTokens = extractNumberTokens(afterParen).filter((token) => {
+            const digits = token.raw.replace(/\D/g, "");
+            return digits.length <= 7;
+          });
+          if (afterTokens.length) {
+            const token = afterTokens[0];
+            return {
+              ...token,
+              index: closingParenIndex + 1 + token.index,
+              end: closingParenIndex + 1 + token.end
+            };
+          }
+          // 括號內通常是手續費所對應的原幣金額；括號後若沒有數字，
+          // 代表實際手續費金額已被陰影吃掉，不能把原幣金額誤當刷卡金額。
+          return null;
+        }
+
+        const withoutTrailingDate = rest.replace(/\s+[0-9OoIl|]{1,2}[\/|][0-9OoIl|]{1,2}\s*.*$/, "");
+        const currencyPattern = `(?:${CURRENCIES.join("|")}|${Object.keys(COUNTRY_CURRENCY).join("|")})`;
+        const currencyMatch = withoutTrailingDate.toUpperCase().match(new RegExp(`\\b${currencyPattern}\\b`));
+        const amountArea = currencyMatch
+          ? withoutTrailingDate.slice(0, currencyMatch.index)
+          : withoutTrailingDate;
+        const tokens = extractNumberTokens(amountArea).filter((token) => {
+          const digits = token.raw.replace(/\D/g, "");
+          return digits.length <= 7;
+        });
+        if (!tokens.length) return null;
+
+        return tokens
+          .map((token, index) => {
+            const hasComma = token.raw.includes(",");
+            const digits = token.raw.replace(/\D/g, "");
+            let score = index / 10;
+            if (hasComma) score += 4;
+            if (token.value >= 10) score += 1;
+            if (token.value >= 100) score += 1;
+            if (digits.length >= 8) score -= 8;
+            return { token, score };
+          })
+          .sort((a, b) => b.score - a.score)[0].token;
+      }
+
+      function parseRecord(record, sourcePage, sourceIndex, allowMissingTail = false) {
+        const dates = parseDatePrefix(record);
+        if (!dates) return null;
+
+        const rest = record.slice(dates.endIndex);
+        const tail = findCardTail(rest);
+        if (!tail && !allowMissingTail) return null;
+
+        const left = tail ? rest.slice(0, tail.index).trim() : rest.trim();
+        const amountToken = tail
+          ? extractNumberTokens(left).at(-1)
+          : chooseAmountWithoutTail(rest);
+        if (!amountToken) return null;
+
+        const description = normalizeText(rest.slice(0, amountToken.index))
+          .replace(/^[\s:;,.|/_-]+|[\s:;,.|/_-]+$/g, "");
+        if (!description || description.length < 2) return null;
+
+        const afterTail = tail
+          ? rest.slice(tail.index + tail.length)
+          : rest.slice(amountToken.end);
+        const foreign = parseForeignReference(afterTail);
+
+        return {
+          rawIndex: sourceIndex,
+          sourcePage,
+          transactionMMDD: dates.transaction,
+          postingMMDD: dates.posting,
+          description,
+          amount: amountToken.value,
+          country: foreign.country,
+          currency: foreign.currency,
+          foreignAmount: foreign.amount,
+          raw: record
+        };
+      }
+
+      function findHeaderTail(line) {
+        if (parseDatePrefix(line)) return null;
+        if (!/[*＊Xx]{2,}|持卡|卡號|RIBI|CARD/i.test(line)) return null;
+        const tokens = normalizeText(line).match(/[0-9OoQIl|SsBb]{4}/g) || [];
+        if (!tokens.length) return null;
+        return normalizeOcrDigits(tokens.at(-1)).replace(/\D/g, "");
+      }
+
+      function collectPageRecords(pageText, pageIndex) {
+        const lines = String(pageText ?? "")
+          .split(/\n+/)
+          .map(normalizeText)
+          .filter(Boolean);
+        const records = [];
+        let targetSectionActive = false;
+        let previousRecord = null;
+
+        lines.forEach((line, lineIndex) => {
+          const headerTail = findHeaderTail(line);
+          if (headerTail) {
+            targetSectionActive =
+              headerTail.length === 4 && hammingDistance(headerTail, CARD_TAIL) <= 1;
+            return;
+          }
+          if (!parseDatePrefix(line)) return;
+
+          const strictRecord = parseRecord(line, pageIndex + 1, lineIndex, false);
+          if (strictRecord) {
+            targetSectionActive = true;
+            records.push(strictRecord);
+            previousRecord = strictRecord;
+            return;
+          }
+          if (targetSectionActive) {
+            const tolerantRecord = parseRecord(line, pageIndex + 1, lineIndex, true);
+            if (tolerantRecord) {
+              records.push(tolerantRecord);
+              previousRecord = tolerantRecord;
+              return;
+            }
+
+            const dates = parseDatePrefix(line);
+            const description = normalizeText(line.slice(dates.endIndex));
+            const cashbackWithoutAmount = /現金\s*回饋|CASH\s*BACK|CASHBACK|REBATE/i.test(description);
+            const foreignReference = parseForeignReference(description);
+            const feeWithoutAmount = previousRecord &&
+              dates.transaction === previousRecord.transactionMMDD &&
+              dates.posting === previousRecord.postingMMDD &&
+              /\([^)]*\)/.test(description) &&
+              Boolean(foreignReference.currency);
+
+            if (cashbackWithoutAmount || feeWithoutAmount) {
+              const placeholder = {
+                rawIndex: lineIndex,
+                sourcePage: pageIndex + 1,
+                transactionMMDD: dates.transaction,
+                postingMMDD: dates.posting,
+                description,
+                amount: feeWithoutAmount ? Math.round(previousRecord.amount * .015) : 0,
+                country: foreignReference.country,
+                currency: foreignReference.currency,
+                foreignAmount: foreignReference.amount,
+                raw: line,
+                forcedReason: cashbackWithoutAmount ? "cashback" : "fee"
+              };
+              records.push(placeholder);
+              previousRecord = placeholder;
+            }
+          }
+        });
+        return records;
+      }
+
+      function looksLikeCashback(record) {
+        return record.amount <= 0 ||
+          /現金\s*回饋|回饋\s*金|CASH\s*BACK|CASHBACK|REBATE|REWARD\s*CREDIT/i.test(record.description);
+      }
+
+      function looksLikeFeeByText(record) {
+        return /國外.{0,5}(交易)?.{0,5}手續費|交易.{0,4}手續費|手續費|OVERSEAS.{0,10}(TXN|TRANSACTION|FEE)|FOREIGN.{0,10}(TXN|TRANSACTION|FEE)/i
+          .test(record.description);
+      }
+
+      function looksLikeStructuralFee(record, previous) {
+        if (!previous) return false;
+        if (record.amount <= 0 || previous.amount <= 0) return false;
+        if (record.transactionMMDD !== previous.transactionMMDD || record.postingMMDD !== previous.postingMMDD) {
+          return false;
+        }
+        if (record.amount >= previous.amount || record.amount > 2000) return false;
+
+        const ratio = record.amount / previous.amount;
+        const reference = parseForeignReference(`${record.description} ${record.raw}`);
+        const closeToBankRate = ratio >= .011 && ratio <= .021;
+        const hasForeignReference = Boolean(reference.currency && reference.amount);
+        return closeToBankRate || (hasForeignReference && ratio < .03);
+      }
+
+      function inferYearDates(records, year) {
+        const months = records.map((record) => Number(record.transactionMMDD.slice(0, 2)));
+        const crossesYear = months.some((month) => month >= 10) && months.some((month) => month <= 3);
+
+        return records.map((record) => {
+          const transactionMonth = Number(record.transactionMMDD.slice(0, 2));
+          const postingMonth = Number(record.postingMMDD.slice(0, 2));
+          const transactionYear = crossesYear && transactionMonth >= 10 ? year - 1 : year;
+          const postingYear = crossesYear && postingMonth >= 10 ? year - 1 : year;
+          return {
+            ...record,
+            transactionDate: `${transactionYear}-${record.transactionMMDD.replace("/", "-")}`,
+            postingDate: `${postingYear}-${record.postingMMDD.replace("/", "-")}`
+          };
+        });
+      }
+
+      function parseStatementText(rawText, year = state.statementYear) {
+        const joinedText = Array.isArray(rawText) ? rawText.join("\n") : String(rawText ?? "");
+        const sourcePages = Array.isArray(rawText) ? rawText : [joinedText];
+        const parsed = [];
+
+        sourcePages.forEach((pageText, pageIndex) => {
+          parsed.push(...collectPageRecords(pageText, pageIndex));
+        });
+
+        const rows = [];
+        const excluded = [];
+        let previousRaw = null;
+        let previousIncluded = null;
+
+        parsed.forEach((record) => {
+          const isCashback = record.forcedReason === "cashback" || looksLikeCashback(record);
+          const isFee = !isCashback &&
+            (record.forcedReason === "fee" ||
+              looksLikeFeeByText(record) ||
+              looksLikeStructuralFee(record, previousRaw));
+
+          if (isCashback) {
+            excluded.push({ ...record, reason: "cashback" });
+          } else if (isFee) {
+            const reference = parseForeignReference(`${record.description} ${record.raw}`);
+            if (previousIncluded && previousRaw === previousIncluded.__rawRef) {
+              if (reference.currency) {
+                previousIncluded.currency = reference.currency;
+                previousIncluded.country = reference.country || previousIncluded.country;
+              }
+              if (reference.amount !== "") {
+                previousIncluded.foreignAmount = reference.amount;
+              }
+            }
+            excluded.push({ ...record, reason: "fee" });
+          } else {
+            const duplicateKey = [
+              record.transactionMMDD,
+              record.postingMMDD,
+              record.description.replace(/\s+/g, "").toUpperCase(),
+              record.amount,
+              record.currency,
+              record.foreignAmount
+            ].join("|");
+            const duplicate = rows.some((row) => row.__duplicateKey === duplicateKey);
+            if (!duplicate) {
+              const included = {
+                ...record,
+                id: makeId(`${record.sourcePage}-${record.rawIndex}`),
+                invoiceFound: false,
+                note: "",
+                __duplicateKey: duplicateKey,
+                __rawRef: record
+              };
+              rows.push(included);
+              previousIncluded = included;
+            }
+          }
+          previousRaw = record;
+        });
+
+        const datedRows = inferYearDates(rows, Number(year));
+        return {
+          rows: datedRows.map((row) => {
+            const copy = { ...row };
+            delete copy.__duplicateKey;
+            delete copy.__rawRef;
+            return copy;
+          }),
+          excluded,
+          parsedCount: parsed.length
+        };
+      }
+
+      function buildFingerprint(files) {
+        return [...files]
+          .map((file) => `${file.name}:${file.size}:${file.lastModified}`)
+          .join("|");
+      }
+
+      function storageKey() {
+        return state.fingerprint ? `${STORAGE_PREFIX}${state.fingerprint}` : "";
+      }
+
+      function persistState() {
+        clearTimeout(persistTimer);
+        persistTimer = window.setTimeout(() => {
+          const key = storageKey();
+          if (!key) return;
+          try {
+            localStorage.setItem(key, JSON.stringify({
+              rows: state.rows,
+              excluded: state.excluded,
+              rawText: state.rawText,
+              statementYear: state.statementYear,
+              savedAt: Date.now()
+            }));
+          } catch {
+            // Local persistence is helpful but never blocks the monthly workflow.
+          }
+        }, 180);
+      }
+
+      function restoreState() {
+        const key = storageKey();
+        if (!key) return false;
+        try {
+          const saved = JSON.parse(localStorage.getItem(key));
+          if (!saved || !Array.isArray(saved.rows) || !saved.rows.length) return false;
+          state.rows = saved.rows;
+          state.excluded = Array.isArray(saved.excluded) ? saved.excluded : [];
+          state.rawText = saved.rawText || "";
+          state.statementYear = Number(saved.statementYear) || state.statementYear;
+          dom.statementYear.value = state.statementYear;
+          return true;
+        } catch {
+          return false;
+        }
+      }
+
+      function getCounts() {
+        const found = state.rows.filter((row) => row.invoiceFound).length;
+        const missing = state.rows.length - found;
+        const fees = state.excluded.filter((row) => row.reason === "fee");
+        const cashback = state.excluded.filter((row) => row.reason === "cashback");
+        return {
+          found,
+          missing,
+          fees,
+          cashback,
+          total: state.rows.reduce((sum, row) => sum + Number(row.amount || 0), 0),
+          feeTotal: fees.reduce((sum, row) => sum + Number(row.amount || 0), 0),
+          cashbackTotal: cashback.reduce((sum, row) => sum + Number(row.amount || 0), 0)
+        };
+      }
+
+      function getFilteredRows() {
+        const query = state.search.trim().toLocaleLowerCase("zh-Hant");
+        return state.rows.filter((row) => {
+          if (state.filter === "found" && !row.invoiceFound) return false;
+          if (state.filter === "missing" && row.invoiceFound) return false;
+          if (!query) return true;
+          return `${row.description} ${row.note} ${row.currency}`
+            .toLocaleLowerCase("zh-Hant")
+            .includes(query);
+        });
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function attachmentCountForRow(rowId) {
+        return state.attachments.filter((item) => item.rowId === rowId).length;
+      }
+
+      function fileExtension(filename, mimeType = "") {
+        const match = String(filename || "").toLowerCase().match(/\.([a-z0-9]{1,8})$/);
+        if (match) return match[1] === "jpeg" ? "jpg" : match[1];
+        if (mimeType === "application/pdf") return "pdf";
+        if (mimeType === "image/png") return "png";
+        if (mimeType === "image/webp") return "webp";
+        return "jpg";
+      }
+
+      function filenameAmount(row) {
+        const hasForeign = row.foreignAmount !== "" &&
+          row.foreignAmount !== null &&
+          row.foreignAmount !== undefined &&
+          Number.isFinite(Number(row.foreignAmount));
+        const amount = hasForeign ? Number(row.foreignAmount) : Number(row.amount || 0);
+        const currency = hasForeign ? (row.currency || "原幣") : "TWD";
+        return `${Number.isInteger(amount) ? amount : amount.toFixed(2)}${currency}`;
+      }
+
+      function filenameBase(row) {
+        const date = row.transactionDate || `${state.statementYear}-未填日期`;
+        const description = safeFilename(row.description || "未填商店").slice(0, 60);
+        return safeFilename(`${date}_${description}_${filenameAmount(row)}`);
+      }
+
+      function buildAttachmentNames() {
+        const used = new Map();
+        return state.attachments.map((item) => {
+          const row = state.rows.find((candidate) => candidate.id === item.rowId);
+          const base = filenameBase(row || {});
+          const extension = fileExtension(item.file.name, item.file.type);
+          const key = `${base}.${extension}`.toLocaleLowerCase();
+          const count = (used.get(key) || 0) + 1;
+          used.set(key, count);
+          return {
+            ...item,
+            row,
+            exportName: `${base}${count > 1 ? `_${count}` : ""}.${extension}`
+          };
+        });
+      }
+
+      function renderReview() {
+        dom.reviewPanel.classList.toggle("is-visible", state.rows.length > 0);
+        dom.reviewCount.textContent = `${state.attachments.length} 個附件`;
+
+        const previousTarget = state.attachmentTargetId || dom.receiptTarget.value;
+        dom.receiptTarget.innerHTML = state.rows.map((row) => {
+          const hasForeign = row.foreignAmount !== "" &&
+            row.foreignAmount !== null &&
+            row.foreignAmount !== undefined;
+          const amount = hasForeign
+            ? `${formatDecimal(row.foreignAmount)} ${row.currency || "原幣"}`
+            : `${formatInteger(row.amount)} TWD`;
+          return `<option value="${escapeHtml(row.id)}">${row.invoiceFound ? "✓ " : ""}${escapeHtml(row.transactionDate)}｜${escapeHtml(row.description || "未填商店")}｜${escapeHtml(amount)}</option>`;
+        }).join("");
+
+        const targetExists = state.rows.some((row) => row.id === previousTarget);
+        if (targetExists) {
+          dom.receiptTarget.value = previousTarget;
+          state.attachmentTargetId = previousTarget;
+        } else {
+          const preferred = state.rows.find((row) => !row.invoiceFound) || state.rows[0];
+          dom.receiptTarget.value = preferred?.id || "";
+          state.attachmentTargetId = preferred?.id || "";
+        }
+
+        const namedAttachments = buildAttachmentNames();
+        if (!namedAttachments.length) {
+          dom.reviewGrid.innerHTML = `
+            <div class="review-empty">
+              還沒有附件。請先選擇上方的消費，再按「選擇或拖入附件」。
+            </div>`;
+          return;
+        }
+
+        dom.reviewGrid.innerHTML = namedAttachments.map((item) => {
+          const isImage = /^image\//i.test(item.file.type) || /\.(jpe?g|png|webp)$/i.test(item.file.name);
+          const visual = isImage
+            ? `<img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.row?.description || "收據附件")}">`
+            : `<span class="review-file-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 3h10l4 4v14H5V3Z" stroke="currentColor" stroke-width="1.6"/>
+                  <path d="M15 3v4h4M8 13h8M8 16h6" stroke="currentColor" stroke-width="1.6"/>
+                </svg>
+                PDF
+              </span>`;
+          return `
+            <article class="review-card" data-attachment-id="${escapeHtml(item.id)}">
+              <button class="review-visual open-attachment" type="button" aria-label="開啟 ${escapeHtml(item.exportName)}">${visual}</button>
+              <div class="review-copy">
+                <p class="review-merchant">${escapeHtml(item.row?.transactionDate || "")}｜${escapeHtml(item.row?.description || "未配對")}</p>
+                <p class="review-filename">${escapeHtml(item.exportName)}</p>
+                <p class="review-source">原檔：${escapeHtml(item.file.name)}</p>
+              </div>
+              <button class="icon-btn remove-attachment" type="button" aria-label="移除 ${escapeHtml(item.exportName)}">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </article>`;
+        }).join("");
+      }
+
+      function rowTemplate(row) {
+        const attachmentCount = attachmentCountForRow(row.id);
+        return `
+          <tr data-id="${escapeHtml(row.id)}" class="${row.invoiceFound ? "is-found" : "is-missing"}">
+            <td class="check-cell">
+              <label>
+                <span class="sr-only">${row.invoiceFound ? "取消發票已找到" : "標記發票已找到"}：${escapeHtml(row.description)}</span>
+                <input class="checkbox row-check" type="checkbox" ${row.invoiceFound ? "checked" : ""}>
+              </label>
+            </td>
+            <td>
+              <input class="cell-input" data-field="transactionDate" type="date" value="${escapeHtml(row.transactionDate)}" aria-label="消費日">
+            </td>
+            <td>
+              <input class="cell-input" data-field="postingDate" type="date" value="${escapeHtml(row.postingDate)}" aria-label="入帳日">
+            </td>
+            <td>
+              <input class="cell-input" data-field="description" type="text" value="${escapeHtml(row.description)}" aria-label="商店或說明">
+            </td>
+            <td>
+              <input class="cell-input amount" data-field="amount" data-number="integer" inputmode="numeric" value="${escapeHtml(formatInteger(row.amount))}" aria-label="台幣金額">
+            </td>
+            <td>
+              <input class="cell-input" data-field="currency" type="text" maxlength="3" value="${escapeHtml(row.currency || "")}" placeholder="TWD" aria-label="原幣幣別">
+            </td>
+            <td>
+              <input class="cell-input amount" data-field="foreignAmount" data-number="decimal" inputmode="decimal" value="${escapeHtml(formatDecimal(row.foreignAmount))}" aria-label="原幣金額">
+            </td>
+            <td>
+              <input class="cell-input" data-field="note" type="text" value="${escapeHtml(row.note || "")}" placeholder="可填發票號碼或用途" aria-label="備註">
+            </td>
+            <td style="text-align:center">
+              <span class="row-actions">
+                <button class="icon-btn attach-row ${attachmentCount ? "has-attachment" : ""}" type="button" aria-label="替 ${escapeHtml(row.description)} 加入附件">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M8.5 12.5 14 7a3 3 0 0 1 4.2 4.2l-7.4 7.4a5 5 0 0 1-7.1-7.1L11 4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                  </svg>
+                  ${attachmentCount ? `<span class="attachment-badge">${attachmentCount}</span>` : ""}
+                </button>
+                <button class="icon-btn delete-row" type="button" aria-label="刪除 ${escapeHtml(row.description)}">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </span>
+            </td>
+          </tr>`;
+      }
+
+      function render() {
+        const counts = getCounts();
+        const filteredRows = getFilteredRows();
+        dom.transactionCount.textContent = state.rows.length;
+        dom.totalAmount.textContent = formatInteger(counts.total);
+        dom.invoiceProgress.textContent = `${counts.found} / ${state.rows.length}`;
+        dom.allCount.textContent = `(${state.rows.length})`;
+        dom.missingCount.textContent = `(${counts.missing})`;
+        dom.foundCount.textContent = `(${counts.found})`;
+        dom.excludedText.textContent =
+          `國外交易手續費 ${counts.fees.length} 筆、現金回饋 ${counts.cashback.length} 筆`;
+
+        dom.tableBody.innerHTML = filteredRows.map(rowTemplate).join("");
+        dom.emptyResults.classList.toggle("is-visible", filteredRows.length === 0);
+        dom.tableScroll.style.display = filteredRows.length ? "" : "none";
+        dom.workspace.classList.toggle("is-visible", state.rows.length > 0);
+        dom.exportButton.classList.toggle("is-visible", state.rows.length > 0);
+        dom.exportButton.disabled = state.rows.length === 0 || state.busy;
+
+        dom.checkAll.checked = state.rows.length > 0 && counts.found === state.rows.length;
+        dom.checkAll.indeterminate = counts.found > 0 && counts.found < state.rows.length;
+        dom.checkAll.disabled = state.rows.length === 0;
+        renderReview();
+
+        $$(".filter-btn").forEach((button) => {
+          button.classList.toggle("is-active", button.dataset.filter === state.filter);
+        });
+      }
+
+      function setProgress(percent, label) {
+        const clamped = Math.max(0, Math.min(100, Math.round(percent)));
+        dom.progressBar.style.width = `${clamped}%`;
+        dom.progressPercent.textContent = `${clamped}%`;
+        if (label) dom.progressText.textContent = label;
+      }
+
+      function setBusy(isBusy) {
+        state.busy = isBusy;
+        dom.recognizeButton.disabled = isBusy || state.files.length === 0;
+        dom.changeFileButton.disabled = isBusy;
+        dom.statementYear.disabled = isBusy;
+        dom.exportButton.disabled = isBusy || state.rows.length === 0;
+        dom.recognizeButton.lastChild.textContent = isBusy ? " 辨識中…" : " 開始辨識";
+      }
+
+      async function loadScriptFromSources(globalName, sources) {
+        if (window[globalName]) return window[globalName];
+        let lastError = null;
+
+        for (const src of sources) {
+          try {
+            await new Promise((resolve, reject) => {
+              const script = document.createElement("script");
+              script.src = src;
+              script.async = true;
+              script.onload = resolve;
+              script.onerror = () => reject(new Error(`無法載入 ${src}`));
+              document.head.appendChild(script);
+            });
+            if (window[globalName]) return window[globalName];
+          } catch (error) {
+            lastError = error;
+          }
+        }
+        throw lastError || new Error(`無法載入 ${globalName}`);
+      }
+
+      function loadImage(file) {
+        return new Promise((resolve, reject) => {
+          const image = new Image();
+          const url = URL.createObjectURL(file);
+          image.onload = () => {
+            URL.revokeObjectURL(url);
+            resolve(image);
+          };
+          image.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error(`無法讀取圖片：${file.name}`));
+          };
+          image.src = url;
+        });
+      }
+
+      async function prepareImage(file) {
+        const image = await loadImage(file);
+        /*
+         * 一般手機照片保留原始像素最準；過度增強對比可能把陰影邊界誤認
+         * 成數字（例如 96,127 → 196,127）。只有窄於 1,300px 的圖片
+         * 才溫和放大，避免小字資訊不足。
+         */
+        if (image.naturalWidth >= 1300) return file;
+
+        const targetWidth = 1800;
+        const scale = Math.min(2.2, targetWidth / image.naturalWidth);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(image.naturalWidth * scale);
+        canvas.height = Math.round(image.naturalHeight * scale);
+        const context = canvas.getContext("2d");
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = "high";
+        context.filter = "grayscale(1) contrast(1.12) brightness(1.02)";
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        context.filter = "none";
+        return canvas;
+      }
+
+      function statusLabel(status) {
+        const labels = {
+          "loading tesseract core": "載入辨識引擎",
+          "initializing tesseract": "初始化辨識引擎",
+          "loading language traineddata": "載入中英文辨識資料",
+          "initializing api": "準備辨識",
+          "recognizing text": "讀取帳單文字"
+        };
+        return labels[status] || "辨識帳單";
+      }
+
+      async function runOCR() {
+        if (!state.files.length || state.busy) return;
+        hideNotice();
+        setBusy(true);
+        setProgress(2, "準備圖片");
+
+        let worker = null;
+        try {
+          const Tesseract = await loadScriptFromSources("Tesseract", TESSERACT_SOURCES);
+          const texts = [];
+          let currentFileIndex = 0;
+
+          worker = await Tesseract.createWorker(["chi_tra", "eng"], Tesseract.OEM.LSTM_ONLY, {
+            workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
+            corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1",
+            langPath: "https://tessdata.projectnaptha.com/4.0.0",
+            logger(message) {
+              const localProgress = Number(message.progress || 0);
+              const base = (currentFileIndex / state.files.length) * 100;
+              const span = 100 / state.files.length;
+              const overall = base + localProgress * span;
+              setProgress(Math.min(97, overall), statusLabel(message.status));
+            }
+          });
+
+          await worker.setParameters({
+            tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
+            preserve_interword_spaces: "1",
+            user_defined_dpi: "300"
+          });
+
+          for (currentFileIndex = 0; currentFileIndex < state.files.length; currentFileIndex += 1) {
+            const file = state.files[currentFileIndex];
+            setProgress(
+              (currentFileIndex / state.files.length) * 100,
+              `準備第 ${currentFileIndex + 1} / ${state.files.length} 頁`
+            );
+            const canvas = await prepareImage(file);
+            const result = await worker.recognize(canvas);
+            texts.push(result.data.text || "");
+          }
+
+          state.rawText = texts.join("\n\n===== 下一頁 =====\n\n");
+          const parsed = parseStatementText(texts, state.statementYear);
+          state.rows = parsed.rows;
+          state.excluded = parsed.excluded;
+          setProgress(100, "辨識完成");
+
+          if (!state.rows.length) {
+            render();
+            showNotice(
+              "沒有抓到尾號 <strong>2388</strong> 的消費。請確認照片清楚且包含完整卡片區段；也可開啟「辨識原文」手動修正後重套規則。",
+              "error"
+            );
+            dom.rawText.value = state.rawText;
+            dom.rawDialog.showModal();
+          } else {
+            render();
+            const counts = getCounts();
+            showNotice(
+              `辨識完成：保留 <strong>${state.rows.length} 筆</strong>實際消費、合計 <strong>${formatInteger(counts.total)} 元</strong>；` +
+              `已排除國外交易手續費 ${counts.fees.length} 筆與現金回饋 ${counts.cashback.length} 筆。`
+            );
+            persistState();
+          }
+        } catch (error) {
+          console.error(error);
+          setProgress(0, "辨識失敗");
+          showNotice(
+            "圖片辨識引擎載入失敗。請確認目前有網路後重試；帳單只會留在這個瀏覽器中，不會上傳到其他伺服器。",
+            "error"
+          );
+        } finally {
+          if (worker) {
+            try {
+              await worker.terminate();
+            } catch {
+              // Termination errors do not affect the extracted result.
+            }
+          }
+          setBusy(false);
+        }
+      }
+
+      function updatePreview(files) {
+        if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
+        state.previewUrl = URL.createObjectURL(files[0]);
+        dom.previewImage.src = state.previewUrl;
+        dom.previewImage.style.display = "";
+        dom.previewFallback.style.display = "none";
+        dom.previewImage.onerror = () => {
+          dom.previewImage.style.display = "none";
+          dom.previewFallback.style.display = "block";
+        };
+      }
+
+      function selectFiles(fileList) {
+        const files = [...fileList].filter((file) =>
+          /^(image\/jpeg|image\/png|image\/webp)$/i.test(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name)
+        );
+        if (!files.length) {
+          toast("請選擇 JPG、PNG 或 WEBP 帳單圖片");
+          return;
+        }
+
+        state.files = files;
+        state.fingerprint = buildFingerprint(files);
+        state.attachments.forEach((item) => URL.revokeObjectURL(item.url));
+        state.attachments = [];
+        state.attachmentTargetId = "";
+        state.rows = [];
+        state.excluded = [];
+        state.rawText = "";
+        state.filter = "all";
+        state.search = "";
+        dom.searchInput.value = "";
+
+        dom.dropZone.classList.add("has-file");
+        dom.fileName.textContent = files.length === 1 ? files[0].name : `${files[0].name} 等 ${files.length} 頁`;
+        dom.fileMeta.textContent =
+          `${files.length} 張圖片・${formatBytes(files.reduce((sum, file) => sum + file.size, 0))}`;
+        updatePreview(files);
+        setProgress(0, "等待辨識");
+        render();
+
+        if (restoreState()) {
+          setProgress(100, "已載入上次進度");
+          render();
+          const counts = getCounts();
+          showNotice(
+            `已載入這份帳單上次的整理進度：${state.rows.length} 筆消費、已找到 ${counts.found} 張發票。`
+          );
+        } else {
+          hideNotice();
+          window.setTimeout(runOCR, 180);
+        }
+      }
+
+      function findRow(rowElement) {
+        return state.rows.find((row) => row.id === rowElement?.dataset.id);
+      }
+
+      function handleTableChange(event) {
+        const rowElement = event.target.closest("tr[data-id]");
+        const row = findRow(rowElement);
+        if (!row) return;
+
+        if (event.target.classList.contains("row-check")) {
+          row.invoiceFound = event.target.checked;
+          state.attachmentTargetId = row.id;
+          rowElement.classList.toggle("is-found", row.invoiceFound);
+          rowElement.classList.toggle("is-missing", !row.invoiceFound);
+          render();
+          persistState();
+          return;
+        }
+
+        const field = event.target.dataset.field;
+        if (!field) return;
+        let value = event.target.value;
+        if (event.target.dataset.number) {
+          value = value.trim() === "" && field === "foreignAmount" ? "" : cleanNumericInput(value);
+        }
+        if (field === "currency") value = value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
+        row[field] = value;
+        persistState();
+        updateSummaryOnly();
+        renderReview();
+      }
+
+      function updateSummaryOnly() {
+        const counts = getCounts();
+        dom.transactionCount.textContent = state.rows.length;
+        dom.totalAmount.textContent = formatInteger(counts.total);
+        dom.invoiceProgress.textContent = `${counts.found} / ${state.rows.length}`;
+        dom.allCount.textContent = `(${state.rows.length})`;
+        dom.missingCount.textContent = `(${counts.missing})`;
+        dom.foundCount.textContent = `(${counts.found})`;
+      }
+
+      function handleTableFocus(event) {
+        if (!event.target.dataset.number) return;
+        const row = findRow(event.target.closest("tr[data-id]"));
+        const field = event.target.dataset.field;
+        if (!row || !field) return;
+        event.target.value = row[field] === "" ? "" : String(row[field]);
+        event.target.select();
+      }
+
+      function handleTableBlur(event) {
+        if (!event.target.dataset.number) return;
+        const row = findRow(event.target.closest("tr[data-id]"));
+        const field = event.target.dataset.field;
+        if (!row || !field) return;
+        event.target.value = event.target.dataset.number === "integer"
+          ? formatInteger(row[field])
+          : formatDecimal(row[field]);
+      }
+
+      function addRow() {
+        const today = new Date();
+        const isoDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+        const row = {
+          id: makeId("manual"),
+          transactionDate: isoDate,
+          postingDate: isoDate,
+          transactionMMDD: isoDate.slice(5).replace("-", "/"),
+          postingMMDD: isoDate.slice(5).replace("-", "/"),
+          description: "",
+          amount: 0,
+          country: "",
+          currency: "",
+          foreignAmount: "",
+          invoiceFound: false,
+          note: "",
+          raw: "手動新增",
+          sourcePage: 0
+        };
+        state.rows.push(row);
+        state.filter = "all";
+        state.search = "";
+        dom.searchInput.value = "";
+        render();
+        persistState();
+        window.requestAnimationFrame(() => {
+          const element = dom.tableBody.querySelector(`tr[data-id="${CSS.escape(row.id)}"] input[data-field="description"]`);
+          element?.focus();
+        });
+      }
+
+      function removeRow(id) {
+        const row = state.rows.find((item) => item.id === id);
+        if (!row) return;
+        if (!window.confirm(`確定刪除「${row.description || "這筆消費"}」？`)) return;
+        state.attachments
+          .filter((item) => item.rowId === id)
+          .forEach((item) => URL.revokeObjectURL(item.url));
+        state.attachments = state.attachments.filter((item) => item.rowId !== id);
+        state.rows = state.rows.filter((item) => item.id !== id);
+        render();
+        persistState();
+        toast("已刪除 1 筆消費");
+      }
+
+      function slashDate(isoDate) {
+        return String(isoDate || "").replace(/-/g, "/");
+      }
+
+      function safeFilename(value) {
+        return String(value)
+          .normalize("NFKC")
+          .replace(/[\\/:*?"<>|\u0000-\u001f]/g, "-")
+          .replace(/\s+/g, "_")
+          .replace(/_+/g, "_")
+          .replace(/^[._-]+|[._-]+$/g, "") || "未命名";
+      }
+
+      function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
+
+      async function exportPackage() {
+        if (!state.rows.length) return;
+        dom.exportButton.disabled = true;
+        try {
+          const [XLSX, JSZip] = await Promise.all([
+            loadScriptFromSources("XLSX", XLSX_SOURCES),
+            loadScriptFromSources("JSZip", JSZIP_SOURCES)
+          ]);
+          const counts = getCounts();
+          const namedAttachments = buildAttachmentNames();
+          const detailRows = [
+            [
+              "發票狀態",
+              "消費日期",
+              "入帳日期",
+              "商店／說明",
+              "台幣金額",
+              "原幣幣別",
+              "原幣金額",
+              "卡號末四碼",
+              "備註",
+              "附件檔名"
+            ],
+            ...state.rows.map((row) => [
+              row.invoiceFound ? "已找到" : "尚未找到",
+              slashDate(row.transactionDate),
+              slashDate(row.postingDate),
+              row.description,
+              Number(row.amount || 0),
+              row.currency || "",
+              row.foreignAmount === "" ? "" : Number(row.foreignAmount),
+              CARD_TAIL,
+              row.note || "",
+              namedAttachments
+                .filter((item) => item.rowId === row.id)
+                .map((item) => item.exportName)
+                .join("、")
+            ])
+          ];
+
+          const summaryRows = [
+            ["公司卡報帳整理摘要", ""],
+            ["卡號末四碼", CARD_TAIL],
+            ["帳單年度", state.statementYear],
+            ["實際消費筆數", state.rows.length],
+            ["實際報帳金額", counts.total],
+            ["發票已找到", counts.found],
+            ["尚缺發票", counts.missing],
+            ["附件數量", state.attachments.length],
+            ["已排除國外交易手續費", `${counts.fees.length} 筆`],
+            ["已排除現金回饋", `${counts.cashback.length} 筆`],
+            ["產生時間", new Date().toLocaleString("zh-TW", { hour12: false })],
+            ["來源圖片", state.files.map((file) => file.name).join("、") || "手動資料"]
+          ];
+
+          const detailSheet = XLSX.utils.aoa_to_sheet(detailRows);
+          detailSheet["!cols"] = [
+            { wch: 12 },
+            { wch: 13 },
+            { wch: 13 },
+            { wch: 34 },
+            { wch: 14 },
+            { wch: 12 },
+            { wch: 15 },
+            { wch: 13 },
+            { wch: 30 },
+            { wch: 54 }
+          ];
+          detailSheet["!autofilter"] = { ref: `A1:J${detailRows.length}` };
+
+          const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+          summarySheet["!cols"] = [{ wch: 28 }, { wch: 42 }];
+
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, detailSheet, "報帳明細");
+          XLSX.utils.book_append_sheet(workbook, summarySheet, "核對摘要");
+
+          const firstDate = state.rows.map((row) => row.transactionDate).filter(Boolean).sort()[0] ||
+            `${state.statementYear}-01-01`;
+          const month = firstDate.slice(0, 7);
+          const excelFilename = safeFilename(`公司卡2388_${month}_${Math.round(counts.total)}元`) + ".xlsx";
+          const zipFilename = safeFilename(`公司卡2388_${month}_報帳整理包`) + ".zip";
+          const workbookData = XLSX.write(workbook, {
+            bookType: "xlsx",
+            type: "array",
+            compression: true
+          });
+
+          const zip = new JSZip();
+          zip.file(excelFilename, workbookData);
+          namedAttachments.forEach((item) => zip.file(item.exportName, item.file));
+          const blob = await zip.generateAsync(
+            { type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } },
+            (metadata) => {
+              dom.exportButton.lastChild.textContent = ` 打包中 ${Math.round(metadata.percent)}%`;
+            }
+          );
+          downloadBlob(blob, zipFilename);
+          toast(`整理包已匯出：${zipFilename}`);
+        } catch (error) {
+          console.error(error);
+          showNotice("匯出元件載入失敗，請確認目前有網路後再按一次「匯出整理包」。", "error");
+        } finally {
+          dom.exportButton.disabled = state.rows.length === 0;
+          dom.exportButton.lastChild.textContent = " 匯出整理包";
+        }
+      }
+
+      function attachReceiptFiles(fileList, rowId = dom.receiptTarget.value) {
+        const row = state.rows.find((item) => item.id === rowId);
+        if (!row) {
+          toast("請先選擇一筆消費");
+          return;
+        }
+        const files = [...fileList].filter((file) =>
+          /^(image\/jpeg|image\/png|image\/webp|application\/pdf)$/i.test(file.type) ||
+          /\.(jpe?g|png|webp|pdf)$/i.test(file.name)
+        );
+        if (!files.length) {
+          toast("附件只支援 JPG、PNG、WEBP 或 PDF");
+          return;
+        }
+        files.forEach((file) => {
+          state.attachments.push({
+            id: makeId("attachment"),
+            rowId: row.id,
+            file,
+            url: URL.createObjectURL(file)
+          });
+        });
+        row.invoiceFound = true;
+        state.attachmentTargetId = row.id;
+        render();
+        persistState();
+        toast(`已替「${row.description || "這筆消費"}」加入 ${files.length} 個附件`);
+      }
+
+      function removeAttachment(id) {
+        const item = state.attachments.find((candidate) => candidate.id === id);
+        if (!item) return;
+        URL.revokeObjectURL(item.url);
+        state.attachments = state.attachments.filter((candidate) => candidate.id !== id);
+        const row = state.rows.find((candidate) => candidate.id === item.rowId);
+        if (row && !attachmentCountForRow(row.id)) row.invoiceFound = false;
+        render();
+        persistState();
+        toast("附件已移除");
+      }
+
+      function openAttachment(id) {
+        const item = state.attachments.find((candidate) => candidate.id === id);
+        if (item) window.open(item.url, "_blank", "noopener");
+      }
+
+      function reparseRawText() {
+        const editedText = dom.rawText.value.trim();
+        if (!editedText) {
+          toast("辨識原文目前是空白的");
+          return;
+        }
+        const parsed = parseStatementText(editedText, state.statementYear);
+        if (!parsed.rows.length) {
+          toast("修正後仍找不到尾號 2388 的消費");
+          return;
+        }
+        state.rawText = editedText;
+        state.rows = parsed.rows;
+        state.excluded = parsed.excluded;
+        state.filter = "all";
+        render();
+        persistState();
+        dom.rawDialog.close();
+        const counts = getCounts();
+        showNotice(
+          `已重新套用規則：保留 <strong>${state.rows.length} 筆</strong>實際消費、合計 <strong>${formatInteger(counts.total)} 元</strong>。`
+        );
+      }
+
+      function changeStatementYear() {
+        const nextYear = Number(dom.statementYear.value);
+        if (!Number.isInteger(nextYear) || nextYear < 2020 || nextYear > 2100) {
+          dom.statementYear.value = state.statementYear;
+          toast("請輸入正確的四位數年度");
+          return;
+        }
+        const previousYear = state.statementYear;
+        state.statementYear = nextYear;
+        state.rows.forEach((row) => {
+          if (row.transactionDate) {
+            const current = Number(row.transactionDate.slice(0, 4));
+            row.transactionDate = `${current + (nextYear - previousYear)}${row.transactionDate.slice(4)}`;
+          }
+          if (row.postingDate) {
+            const current = Number(row.postingDate.slice(0, 4));
+            row.postingDate = `${current + (nextYear - previousYear)}${row.postingDate.slice(4)}`;
+          }
+        });
+        render();
+        persistState();
+      }
+
+      function loadDemo() {
+        state.attachments.forEach((item) => URL.revokeObjectURL(item.url));
+        state.attachments = [];
+        state.attachmentTargetId = "";
+        const demoRows = [
+          ["2026-06-01", "2026-06-03", "範例文具行", 1200, "", "", "辦公用品"],
+          ["2026-06-03", "2026-06-05", "SAMPLE HOTEL TOKYO", 3250, "JPY", 18000, "差旅住宿"],
+          ["2026-06-05", "2026-06-07", "範例計程車", 980, "", "", "市區交通"],
+          ["2026-06-08", "2026-06-10", "DEMO SOFTWARE", 1600, "USD", 49.99, "軟體訂閱"]
+        ];
+        state.rows = demoRows.map((row, index) => ({
+          id: makeId(`demo-${index}`),
+          transactionDate: row[0],
+          postingDate: row[1],
+          description: row[2],
+          amount: row[3],
+          currency: row[4],
+          foreignAmount: row[5],
+          note: row[6],
+          invoiceFound: [0].includes(index),
+          country: "",
+          transactionMMDD: row[0].slice(5).replace("-", "/"),
+          postingMMDD: row[1].slice(5).replace("-", "/"),
+          sourcePage: 1,
+          raw: "示範資料"
+        }));
+        state.excluded = [
+          { reason: "fee", amount: 48 },
+          { reason: "cashback", amount: -100 }
+        ];
+        state.rawText = "示範模式：實際使用時，這裡會顯示 OCR 辨識原文。";
+        state.fingerprint = "";
+        dom.dropZone.classList.add("has-file");
+        dom.fileName.textContent = "demo-statement.jpg";
+        dom.fileMeta.textContent = "1 張圖片・示範資料";
+        dom.previewImage.style.display = "none";
+        dom.previewFallback.style.display = "block";
+        setProgress(100, "辨識完成");
+        render();
+        const counts = getCounts();
+        showNotice(
+          `示範資料：保留 <strong>${state.rows.length} 筆</strong>消費、合計 <strong>${formatInteger(counts.total)} 元</strong>；` +
+          "已排除國外交易手續費 1 筆與現金回饋 1 筆。"
+        );
+      }
+
+      dom.dropZone.addEventListener("click", (event) => {
+        if (event.target.closest("button")) return;
+        dom.fileInput.click();
+      });
+
+      dom.dropZone.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          dom.fileInput.click();
+        }
+      });
+
+      ["dragenter", "dragover"].forEach((eventName) => {
+        dom.dropZone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dom.dropZone.classList.add("is-dragging");
+        });
+      });
+
+      ["dragleave", "drop"].forEach((eventName) => {
+        dom.dropZone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dom.dropZone.classList.remove("is-dragging");
+        });
+      });
+
+      dom.dropZone.addEventListener("drop", (event) => selectFiles(event.dataTransfer.files));
+      dom.fileInput.addEventListener("change", () => selectFiles(dom.fileInput.files));
+      dom.recognizeButton.addEventListener("click", runOCR);
+      dom.changeFileButton.addEventListener("click", () => dom.fileInput.click());
+      dom.statementYear.addEventListener("change", changeStatementYear);
+      dom.searchInput.addEventListener("input", () => {
+        state.search = dom.searchInput.value;
+        render();
+      });
+
+      $$(".filter-btn").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.filter = button.dataset.filter;
+          render();
+        });
+      });
+
+      dom.checkAll.addEventListener("change", () => {
+        state.rows.forEach((row) => {
+          row.invoiceFound = dom.checkAll.checked;
+        });
+        render();
+        persistState();
+      });
+
+      dom.tableBody.addEventListener("change", handleTableChange);
+      dom.tableBody.addEventListener("input", handleTableChange);
+      dom.tableBody.addEventListener("focusin", handleTableFocus);
+      dom.tableBody.addEventListener("focusout", handleTableBlur);
+      dom.tableBody.addEventListener("click", (event) => {
+        const attachButton = event.target.closest(".attach-row");
+        if (attachButton) {
+          const rowId = attachButton.closest("tr[data-id]").dataset.id;
+          state.attachmentTargetId = rowId;
+          dom.receiptTarget.value = rowId;
+          dom.receiptInput.click();
+          return;
+        }
+        const button = event.target.closest(".delete-row");
+        if (!button) return;
+        removeRow(button.closest("tr[data-id]").dataset.id);
+      });
+
+      dom.addRowButton.addEventListener("click", addRow);
+      dom.exportButton.addEventListener("click", exportPackage);
+      dom.receiptTarget.addEventListener("change", () => {
+        state.attachmentTargetId = dom.receiptTarget.value;
+      });
+      dom.receiptPickButton.addEventListener("click", () => dom.receiptInput.click());
+      dom.receiptInput.addEventListener("change", () => {
+        attachReceiptFiles(dom.receiptInput.files);
+        dom.receiptInput.value = "";
+      });
+      ["dragenter", "dragover"].forEach((eventName) => {
+        dom.receiptDropZone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dom.receiptDropZone.classList.add("is-dragging");
+        });
+      });
+      ["dragleave", "drop"].forEach((eventName) => {
+        dom.receiptDropZone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dom.receiptDropZone.classList.remove("is-dragging");
+        });
+      });
+      dom.receiptDropZone.addEventListener("drop", (event) => {
+        attachReceiptFiles(event.dataTransfer.files);
+      });
+      dom.reviewGrid.addEventListener("click", (event) => {
+        const card = event.target.closest("[data-attachment-id]");
+        if (!card) return;
+        if (event.target.closest(".remove-attachment")) {
+          removeAttachment(card.dataset.attachmentId);
+        } else if (event.target.closest(".open-attachment")) {
+          openAttachment(card.dataset.attachmentId);
+        }
+      });
+      dom.rawButton.addEventListener("click", () => {
+        dom.rawText.value = state.rawText;
+        dom.rawDialog.showModal();
+      });
+      dom.closeRawButton.addEventListener("click", () => dom.rawDialog.close());
+      dom.cancelRawButton.addEventListener("click", () => dom.rawDialog.close());
+      dom.reparseButton.addEventListener("click", reparseRawText);
+      dom.rawDialog.addEventListener("click", (event) => {
+        if (event.target === dom.rawDialog) dom.rawDialog.close();
+      });
+
+      window.addEventListener("beforeunload", () => {
+        if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
+        state.attachments.forEach((item) => URL.revokeObjectURL(item.url));
+      });
+
+      dom.statementYear.value = state.statementYear;
+      render();
+
+      const query = new URLSearchParams(window.location.search);
+      if (query.get("demo") === "1") loadDemo();
+
+      window.CompanyCard2388 = {
+        parseStatementText,
+        splitTransactionRecords,
+        getState: () => structuredClone({
+          rows: state.rows,
+          excluded: state.excluded,
+          rawText: state.rawText,
+          statementYear: state.statementYear,
+          attachments: state.attachments.map((item) => ({
+            id: item.id,
+            rowId: item.rowId,
+            name: item.file.name,
+            exportName: buildAttachmentNames().find((candidate) => candidate.id === item.id)?.exportName
+          }))
+        }),
+        loadDemo,
+        attachFiles: (rowId, files) => attachReceiptFiles(files, rowId),
+        getAttachmentNames: () => buildAttachmentNames().map((item) => item.exportName),
+        exportPackage
+      };
+    })();
+  </script>
+</body>
+</html>

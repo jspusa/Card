@@ -2423,7 +2423,7 @@
     <section class="surface ingest-grid" aria-label="帳單上傳與辨識規則">
       <div class="upload-pane">
         <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-describedby="dropHint">
-          <input class="sr-only" id="fileInput" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+          <input class="sr-only" id="fileInput" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple>
 
           <div class="drop-placeholder">
             <span class="upload-icon" aria-hidden="true">
@@ -2433,7 +2433,7 @@
               </svg>
             </span>
             <p class="drop-title">放入帳單</p>
-            <p class="drop-subtitle" id="dropHint">拖曳到這裡，或<span class="drop-link">選擇圖片</span>（可一次多頁）</p>
+            <p class="drop-subtitle" id="dropHint">拖曳到這裡，或<span class="drop-link">選擇圖片或 PDF</span>（可一次多頁）</p>
           </div>
 
           <div class="file-preview">
@@ -2464,7 +2464,7 @@
                   </svg>
                   開始辨識
                 </button>
-                <button class="btn" id="changeFileButton" type="button">更換圖片</button>
+                <button class="btn" id="changeFileButton" type="button">更換檔案</button>
               </div>
             </div>
           </div>
@@ -2730,8 +2730,8 @@
       </button>
     </div>
     <div class="dialog-body">
-      <p class="dialog-copy">若照片文字辨識不完整，可直接修正下方內容，再重新套用尾號 2388 的篩選規則。</p>
-      <textarea class="raw-text" id="rawText" spellcheck="false" placeholder="完成圖片辨識後，原始文字會顯示在這裡。"></textarea>
+      <p class="dialog-copy">若圖片或 PDF 文字辨識不完整，可直接修正下方內容，再重新套用尾號 2388 的篩選規則。</p>
+      <textarea class="raw-text" id="rawText" spellcheck="false" placeholder="完成帳單辨識後，原始文字會顯示在這裡。"></textarea>
     </div>
     <div class="dialog-actions">
       <button class="btn" id="cancelRawButton" type="button">取消</button>
@@ -3111,7 +3111,7 @@
       function parseDatePrefix(line) {
         const normalized = normalizeText(line);
         const match = normalized.match(
-          /^\s*([0-9OoIl|]{1,2})[\/|]([0-9OoIl|]{1,2})\s*[+·:;,-]?\s*([0-9OoIl|]{1,2})[\/|]([0-9OoIl|]{1,2})\s+/
+          /^\s*(?:[^\s0-9A-Za-zOoIl|/]{1,3}\s*)?([0-9OoIl|]{1,2})[\/|]([0-9OoIl|]{1,2})\s*[+·:;,-]?\s*([0-9OoIl|]{1,2})[\/|]([0-9OoIl|]{1,2})\s+/
         );
         if (!match) return null;
 
@@ -3507,6 +3507,10 @@
         return [...files]
           .map((file) => `${file.name}:${file.size}:${file.lastModified}`)
           .join("|");
+      }
+
+      function isPdfFile(file) {
+        return file?.type === "application/pdf" || /\.pdf$/i.test(file?.name || "");
       }
 
       function storageKey() {
@@ -4241,6 +4245,29 @@
         return canvas;
       }
 
+      async function loadPdfDocument(file) {
+        const pdfjsLib = await loadScriptFromSources("pdfjsLib", PDFJS_SOURCES);
+        pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+        const data = new Uint8Array(await file.arrayBuffer());
+        return pdfjsLib.getDocument({
+          data,
+          cMapUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/",
+          cMapPacked: true,
+          standardFontDataUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/standard_fonts/"
+        }).promise;
+      }
+
+      async function renderPdfPage(pdf, pageNumber, scale = 2.5) {
+        const page = await pdf.getPage(pageNumber);
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        const context = canvas.getContext("2d", { alpha: false });
+        await page.render({ canvasContext: context, viewport }).promise;
+        return canvas;
+      }
+
       function statusLabel(status) {
         const labels = {
           "loading tesseract core": "載入辨識引擎",
@@ -4256,13 +4283,33 @@
         if (!state.files.length || state.busy) return;
         hideNotice();
         setBusy(true);
-        setProgress(2, "準備圖片");
+        setProgress(2, "準備帳單");
 
         let worker = null;
+        const pdfDocuments = [];
         try {
           const Tesseract = await loadScriptFromSources("Tesseract", TESSERACT_SOURCES);
+          const pages = [];
+
+          for (let fileIndex = 0; fileIndex < state.files.length; fileIndex += 1) {
+            const file = state.files[fileIndex];
+            if (!isPdfFile(file)) {
+              pages.push({ file, pageNumber: 1, pdf: null });
+              continue;
+            }
+
+            setProgress(3, `讀取 PDF ${fileIndex + 1} / ${state.files.length}`);
+            const pdf = await loadPdfDocument(file);
+            pdfDocuments.push(pdf);
+            for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+              pages.push({ file, pageNumber, pdf });
+            }
+          }
+
+          if (!pages.length) throw new Error("帳單沒有可辨識的頁面");
+
           const texts = [];
-          let currentFileIndex = 0;
+          let currentPageIndex = 0;
 
           worker = await Tesseract.createWorker(["chi_tra", "eng"], Tesseract.OEM.LSTM_ONLY, {
             workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
@@ -4270,8 +4317,8 @@
             langPath: "https://tessdata.projectnaptha.com/4.0.0",
             logger(message) {
               const localProgress = Number(message.progress || 0);
-              const base = (currentFileIndex / state.files.length) * 100;
-              const span = 100 / state.files.length;
+              const base = (currentPageIndex / pages.length) * 100;
+              const span = 100 / pages.length;
               const overall = base + localProgress * span;
               setProgress(Math.min(97, overall), statusLabel(message.status));
             }
@@ -4283,13 +4330,15 @@
             user_defined_dpi: "300"
           });
 
-          for (currentFileIndex = 0; currentFileIndex < state.files.length; currentFileIndex += 1) {
-            const file = state.files[currentFileIndex];
+          for (currentPageIndex = 0; currentPageIndex < pages.length; currentPageIndex += 1) {
+            const source = pages[currentPageIndex];
             setProgress(
-              (currentFileIndex / state.files.length) * 100,
-              `準備第 ${currentFileIndex + 1} / ${state.files.length} 頁`
+              (currentPageIndex / pages.length) * 100,
+              `準備第 ${currentPageIndex + 1} / ${pages.length} 頁`
             );
-            const canvas = await prepareImage(file);
+            const canvas = source.pdf
+              ? await renderPdfPage(source.pdf, source.pageNumber)
+              : await prepareImage(source.file);
             const result = await worker.recognize(canvas);
             texts.push(result.data.text || "");
           }
@@ -4303,7 +4352,7 @@
           if (!state.rows.length) {
             render();
             showNotice(
-              "沒有抓到尾號 <strong>2388</strong> 的消費。請確認照片清楚且包含完整卡片區段；也可開啟「辨識原文」手動修正後重套規則。",
+              "沒有抓到尾號 <strong>2388</strong> 的消費。請確認掃描或照片清楚且包含完整卡片區段；也可開啟「辨識原文」手動修正後重套規則。",
               "error"
             );
             dom.rawText.value = state.rawText;
@@ -4321,7 +4370,7 @@
           console.error(error);
           setProgress(0, "辨識失敗");
           showNotice(
-            "圖片辨識引擎載入失敗。請確認目前有網路後重試；帳單只會留在這個瀏覽器中，不會上傳到其他伺服器。",
+            "帳單辨識引擎或 PDF 元件載入失敗。請確認檔案未加密且目前有網路後重試；帳單只會留在這個瀏覽器中，不會上傳到其他伺服器。",
             "error"
           );
         } finally {
@@ -4332,13 +4381,50 @@
               // Termination errors do not affect the extracted result.
             }
           }
+          await Promise.all(pdfDocuments.map(async (pdf) => {
+            try {
+              await pdf.destroy();
+            } catch {
+              // PDF cleanup never blocks recognition results.
+            }
+          }));
           setBusy(false);
         }
       }
 
-      function updatePreview(files) {
+      async function updatePreview(files) {
         if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
-        state.previewUrl = URL.createObjectURL(files[0]);
+        state.previewUrl = "";
+        const firstFile = files[0];
+        const selectedFingerprint = state.fingerprint;
+
+        dom.previewImage.style.display = "none";
+        dom.previewFallback.style.display = "block";
+
+        if (isPdfFile(firstFile)) {
+          let pdf = null;
+          try {
+            pdf = await loadPdfDocument(firstFile);
+            const canvas = await renderPdfPage(pdf, 1, 0.75);
+            if (state.fingerprint !== selectedFingerprint) return;
+            dom.previewImage.src = canvas.toDataURL("image/jpeg", 0.86);
+            dom.previewImage.style.display = "";
+            dom.previewFallback.style.display = "none";
+          } catch {
+            // The PDF icon remains visible when a thumbnail cannot be prepared.
+          } finally {
+            if (pdf) {
+              try {
+                await pdf.destroy();
+              } catch {
+                // Preview cleanup is best effort.
+              }
+            }
+          }
+          return;
+        }
+
+        state.previewUrl = URL.createObjectURL(firstFile);
         dom.previewImage.src = state.previewUrl;
         dom.previewImage.style.display = "";
         dom.previewFallback.style.display = "none";
@@ -4350,10 +4436,11 @@
 
       function selectFiles(fileList) {
         const files = [...fileList].filter((file) =>
-          /^(image\/jpeg|image\/png|image\/webp)$/i.test(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name)
+          /^(image\/jpeg|image\/png|image\/webp|application\/pdf)$/i.test(file.type) ||
+          /\.(jpe?g|png|webp|pdf)$/i.test(file.name)
         );
         if (!files.length) {
-          toast("請選擇 JPG、PNG 或 WEBP 帳單圖片");
+          toast("請選擇 JPG、PNG、WEBP 或 PDF 帳單檔案");
           return;
         }
 
@@ -4370,10 +4457,16 @@
         dom.searchInput.value = "";
 
         dom.dropZone.classList.add("has-file");
-        dom.fileName.textContent = files.length === 1 ? files[0].name : `${files[0].name} 等 ${files.length} 頁`;
+        dom.fileName.textContent = files.length === 1 ? files[0].name : `${files[0].name} 等 ${files.length} 個檔案`;
+        const pdfCount = files.filter(isPdfFile).length;
+        const imageCount = files.length - pdfCount;
+        const formatSummary = [
+          imageCount ? `${imageCount} 張圖片` : "",
+          pdfCount ? `${pdfCount} 個 PDF` : ""
+        ].filter(Boolean).join("、");
         dom.fileMeta.textContent =
-          `${files.length} 張圖片・${formatBytes(files.reduce((sum, file) => sum + file.size, 0))}`;
-        updatePreview(files);
+          `${formatSummary}・${formatBytes(files.reduce((sum, file) => sum + file.size, 0))}`;
+        void updatePreview(files);
         setProgress(0, "等待辨識");
         render();
 
@@ -4630,7 +4723,7 @@
           ["已排除國外交易手續費", `${counts.fees.length} 筆`],
           ["已排除現金回饋", `${counts.cashback.length} 筆`],
           ["產生時間", new Date().toLocaleString("zh-TW", { hour12: false })],
-          ["來源圖片", state.files.map((file) => file.name).join("、") || "手動資料"]
+          ["來源檔案", state.files.map((file) => file.name).join("、") || "手動資料"]
         ];
 
         const detailSheet = XLSX.utils.aoa_to_sheet(detailRows);
@@ -4751,16 +4844,7 @@
       }
 
       async function extractPdfAttachmentText(file, getOcrWorker) {
-        const pdfjsLib = await loadScriptFromSources("pdfjsLib", PDFJS_SOURCES);
-        pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
-        const data = new Uint8Array(await file.arrayBuffer());
-        const loadingTask = pdfjsLib.getDocument({
-          data,
-          cMapUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/",
-          cMapPacked: true,
-          standardFontDataUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/standard_fonts/"
-        });
-        const pdf = await loadingTask.promise;
+        const pdf = await loadPdfDocument(file);
         const pageTexts = [];
         const pageCount = Math.min(pdf.numPages, 4);
 
@@ -4773,23 +4857,17 @@
         let text = pageTexts.join("\n");
         const needsOcr = compactMatchText(text).length < 40 || extractMoneyValues(text).length === 0;
         if (needsOcr) {
-          const page = await pdf.getPage(1);
-          const viewport = page.getViewport({ scale: 2 });
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.ceil(viewport.width);
-          canvas.height = Math.ceil(viewport.height);
-          const context = canvas.getContext("2d");
-          await page.render({ canvasContext: context, viewport }).promise;
+          const canvas = await renderPdfPage(pdf, 1, 2);
           const worker = await getOcrWorker();
           const result = await worker.recognize(canvas);
           text += `\n${result.data.text || ""}`;
         }
+        await pdf.destroy();
         return text;
       }
 
       async function extractAttachmentText(file, getOcrWorker) {
-        const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
-        if (isPdf) return extractPdfAttachmentText(file, getOcrWorker);
+        if (isPdfFile(file)) return extractPdfAttachmentText(file, getOcrWorker);
         const canvas = await prepareImage(file);
         const worker = await getOcrWorker();
         const result = await worker.recognize(canvas);

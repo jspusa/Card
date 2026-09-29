@@ -2552,6 +2552,16 @@
       <span id="noticeText"></span>
     </div>
 
+    <section class="surface" style="padding:16px 20px; margin-bottom:18px" aria-label="本機進度與備份">
+      <p id="localSaveStatus" role="status" style="margin:0 0 10px">正在檢查本機進度…</p>
+      <p id="readinessStatus" style="margin:0 0 12px;color:#9a5700" hidden></p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="backupButton" type="button" disabled>下載完整備份</button>
+        <button class="btn btn-quiet" id="clearLocalButton" type="button" disabled>清除本期本機資料</button>
+      </div>
+      <p style="font-size:12px;color:#667085;margin:10px 0 0">只保存在此瀏覽器，不傳雲端。請定期下載備份；清除瀏覽器資料或無痕模式可能移除本機副本。</p>
+    </section>
+
     <section class="surface workspace" id="workspace" aria-label="報帳明細">
       <div class="summary-bar">
         <div class="metric">
@@ -2681,7 +2691,7 @@
       <div class="review-head">
         <div>
           <h2>附件複查區</h2>
-          <p>一次拖入全部收據，程式會比較店家、日期、金額與幣別，自動放進最可能的消費並勾選。</p>
+          <p>一次拖入全部收據，程式會比較店家、日期、金額與幣別；只有明確配對才自動勾選，其餘保留待確認。</p>
         </div>
         <span class="review-count" id="reviewCount">0 個附件</span>
       </div>
@@ -2702,7 +2712,7 @@
       </div>
       <details class="inline-help">
         <summary>支援格式與注意事項</summary>
-        <p class="drop-help">支援 JPG、PNG、WEBP、PDF。配對不確定的檔案會保留在下方讓你改選；附件只保留到匯出前，請勿重新整理頁面。</p>
+        <p class="drop-help">支援 JPG、PNG、WEBP、PDF。不確定的配對請手動確認；附件與兩張卡的進度會一起保存在此瀏覽器，請等上方顯示「已保存」再關閉。</p>
       </details>
       <div class="review-grid" id="reviewGrid"></div>
     </section>
@@ -2766,6 +2776,113 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <script id="local-progress-store">
+    // A single-file, local-only store. The adapter is the IndexedDB boundary.
+    window.CardLocalProgress = {
+      create(database, onStatus = () => {}) {
+        let queue = Promise.resolve();
+        let pending = 0;
+        const revisions = new Map();
+        const failures = new Set();
+        const status = () => ({ pending, failed: failures.size, state: failures.size ? "error" : pending ? "saving" : "saved" });
+        return {
+          status,
+          flush() { return queue; },
+          async load(fingerprint) {
+            await queue.catch(() => {});
+            const key = fingerprint || await database.read("latest");
+            if (!key) return null;
+            const snapshot = await database.read(key);
+            if (snapshot) revisions.set(key, snapshot.revision || 0);
+            return snapshot || null;
+          },
+          save(value) {
+            const snapshot = structuredClone(value);
+            pending += 1;
+            onStatus(status());
+            const task = queue.catch(() => {}).then(async () => {
+              const revision = await database.write(snapshot, revisions.get(snapshot.fingerprint) || 0);
+              revisions.set(snapshot.fingerprint, revision);
+              failures.delete(snapshot.fingerprint);
+            }).catch(error => {
+              failures.add(snapshot.fingerprint);
+              throw error;
+            }).finally(() => { pending -= 1; onStatus(status()); });
+            queue = task;
+            return task;
+          },
+          async remove(fingerprint) {
+            await queue.catch(() => {});
+            await database.remove(fingerprint);
+            revisions.delete(fingerprint);
+            failures.delete(fingerprint);
+            onStatus(status());
+          }
+        };
+      },
+      indexedDB(name) {
+        let connection;
+        const open = () => connection ||= new Promise((resolve, reject) => {
+          const request = indexedDB.open(name, 1);
+          request.onupgradeneeded = () => request.result.createObjectStore("workspaces");
+          request.onsuccess = () => {
+            request.result.onversionchange = () => { request.result.close(); connection = null; };
+            resolve(request.result);
+          };
+          request.onerror = () => { connection = null; reject(request.error); };
+          request.onblocked = () => { connection = null; reject(new Error("資料庫被其他分頁占用")); };
+        });
+        const keyFor = key => key === "latest" ? "latest" : `workspace:${key}`;
+        return {
+          async read(key) {
+            const db = await open();
+            return new Promise((resolve, reject) => {
+              const transaction = db.transaction("workspaces", "readonly");
+              const request = transaction.objectStore("workspaces").get(keyFor(key));
+              transaction.oncomplete = () => resolve(request.result);
+              transaction.onabort = () => reject(transaction.error || new Error("讀取失敗"));
+              transaction.onerror = () => reject(transaction.error);
+            });
+          },
+          async write(snapshot, expectedRevision) {
+            const db = await open();
+            return new Promise((resolve, reject) => {
+              const transaction = db.transaction("workspaces", "readwrite");
+              const store = transaction.objectStore("workspaces");
+              const request = store.get(keyFor(snapshot.fingerprint));
+              const revision = expectedRevision + 1;
+              let conflict = false;
+              request.onsuccess = () => {
+                if ((request.result?.revision || 0) !== expectedRevision) {
+                  conflict = true;
+                  transaction.abort();
+                  return;
+                }
+                store.put({ ...snapshot, revision }, keyFor(snapshot.fingerprint));
+                store.put(snapshot.fingerprint, "latest");
+              };
+              transaction.oncomplete = () => resolve(revision);
+              transaction.onabort = () => reject(new Error(conflict ? "其他分頁已更新此帳單，請先下載備份" : "本機儲存失敗"));
+              transaction.onerror = () => reject(transaction.error);
+            });
+          },
+          async remove(fingerprint) {
+            const db = await open();
+            return new Promise((resolve, reject) => {
+              const transaction = db.transaction("workspaces", "readwrite");
+              const store = transaction.objectStore("workspaces");
+              store.delete(keyFor(fingerprint));
+              const request = store.get("latest");
+              request.onsuccess = () => { if (request.result === fingerprint) store.delete("latest"); };
+              transaction.oncomplete = resolve;
+              transaction.onabort = () => reject(transaction.error || new Error("清除失敗"));
+              transaction.onerror = () => reject(transaction.error);
+            });
+          }
+        };
+      }
+    };
+  </script>
   <script>
     (() => {
       "use strict";
@@ -2992,7 +3109,11 @@
         accountingMailText: $("#accountingMailText"),
         generateAccountingMailButton: $("#generateAccountingMailButton"),
         copyAccountingMailButton: $("#copyAccountingMailButton"),
-        toast: $("#toast")
+        toast: $("#toast"),
+        localSaveStatus: $("#localSaveStatus"),
+        readinessStatus: $("#readinessStatus"),
+        backupButton: $("#backupButton"),
+        clearLocalButton: $("#clearLocalButton")
       };
 
       const state = {
@@ -3020,6 +3141,199 @@
       let toastTimer = 0;
       let persistTimer = 0;
       const cardSessions = new Map();
+
+      const isDemo = new URLSearchParams(window.location.search).get("demo") === "1" || window.location.hash === "#demo=1";
+      let workspaceSaveTimer = 0;
+      let workspaceDirty = false;
+      let persistenceUnavailable = false;
+      let workspaceCleared = false;
+      const localProgress = window.CardLocalProgress.create(
+        window.CardLocalProgress.indexedDB(isDemo ? "card-local-progress-demo" : "card-local-progress"),
+        renderSaveStatus
+      );
+
+      function renderSaveStatus() {
+        const status = localProgress.status();
+        const unsaved = persistenceUnavailable || status.failed;
+        dom.localSaveStatus.textContent = unsaved
+          ? "⚠ 尚未成功保存完整進度，請勿關閉；請下載完整備份。可能是空間不足、儲存受限或其他分頁已更新。"
+          : workspaceDirty || status.pending ? "儲存中…請稍候再關閉頁面"
+            : workspaceCleared ? "已清除此帳單的本機副本；目前畫面仍保留，繼續編輯會重新保存。"
+              : state.fingerprint ? "已保存到此瀏覽器（含兩張卡進度與附件）" : "尚未載入帳單；整理後會自動保存到此瀏覽器";
+        dom.localSaveStatus.style.color = unsaved ? "#b42318" : "";
+      }
+
+      function encodeLocalFile(file) {
+        return { blob: file, name: file.name, type: file.type, lastModified: file.lastModified };
+      }
+
+      function decodeLocalFile(file) {
+        if (!(file?.blob instanceof Blob) || typeof file.name !== "string") throw new Error("檔案副本不完整");
+        return new File([file.blob], file.name, { type: file.type, lastModified: file.lastModified });
+      }
+
+      function captureWorkspace() {
+        rememberCardState();
+        return {
+          version: 1, fingerprint: state.fingerprint, cardTail: state.cardTail,
+          statementRawText: state.statementRawText, statementYear: state.statementYear,
+          files: state.files.map(encodeLocalFile), savedAt: Date.now(),
+          cards: [...cardSessions].map(([tail, saved]) => [tail, {
+            ...saved,
+            attachments: saved.attachments.map(({ url, file, ...item }) => ({ ...item, file: encodeLocalFile(file) }))
+          }])
+        };
+      }
+
+      function applyWorkspace(snapshot) {
+        if (snapshot?.version !== 1 || !CARD_TAILS.includes(snapshot.cardTail) || !snapshot.fingerprint || !Array.isArray(snapshot.cards)) {
+          throw new Error("本機進度格式不完整");
+        }
+        const files = snapshot.files.map(decodeLocalFile);
+        // Validate all files before replacing the working copy or creating URLs.
+        const sessions = snapshot.cards.map(([tail, saved]) => {
+          if (!CARD_TAILS.includes(tail) || !Array.isArray(saved.rows) || !Array.isArray(saved.attachments)) throw new Error("卡片進度不完整");
+          return [tail, { ...saved, attachments: saved.attachments.map(item => ({ ...item, file: decodeLocalFile(item.file) })) }];
+        });
+        if (!sessions.some(([tail]) => tail === snapshot.cardTail)) throw new Error("找不到選取卡片的進度");
+        releaseCardSessions();
+        state.files = files;
+        state.fingerprint = snapshot.fingerprint;
+        state.statementRawText = snapshot.statementRawText || "";
+        state.statementYear = snapshot.statementYear;
+        state.cardTail = snapshot.cardTail;
+        for (const [tail, saved] of sessions) {
+          saved.attachments.forEach(item => {
+            item.url = URL.createObjectURL(item.file);
+            if (item.status === "processing") {
+              item.rowId = ""; item.status = "unmatched"; item.matchLevel = "unmatched";
+              item.matchReasons = ["上次讀取尚未完成，請重新核對"];
+            }
+          });
+          cardSessions.set(tail, saved);
+        }
+        resetCardState();
+        restoreState();
+        dom.dropZone.classList.toggle("has-file", files.length > 0);
+        dom.fileName.textContent = files.map(file => file.name).join("、") || "手動整理資料";
+        dom.fileMeta.textContent = "已還原本機完整進度";
+        if (files.length) void updatePreview(files);
+        setProgress(100, "已還原本機進度與附件");
+        render();
+        showCardSummary("已還原");
+      }
+
+      function queueWorkspaceSave(immediate = false) {
+        if (!state.fingerprint) return;
+        workspaceCleared = false;
+        workspaceDirty = true;
+        clearTimeout(workspaceSaveTimer);
+        updateCardControls();
+        renderSaveStatus();
+        const save = () => {
+          workspaceSaveTimer = 0;
+          workspaceDirty = false;
+          try {
+            void localProgress.save(captureWorkspace()).then(() => {
+              persistenceUnavailable = false;
+              renderSaveStatus();
+            }).catch(() => renderSaveStatus());
+          } catch {
+            persistenceUnavailable = true;
+            renderSaveStatus();
+          }
+        };
+        if (immediate) save();
+        else workspaceSaveTimer = window.setTimeout(save, 250);
+      }
+
+      async function startLocalProgress() {
+        if (typeof indexedDB === "undefined") {
+          persistenceUnavailable = true;
+          renderSaveStatus();
+          return;
+        }
+        setBusy(true);
+        try {
+          const saved = await localProgress.load();
+          if (saved) applyWorkspace(saved);
+          else if (isDemo) loadDemo();
+        } catch {
+          persistenceUnavailable = true;
+        } finally {
+          setBusy(false);
+          renderSaveStatus();
+        }
+      }
+
+      function hasUnsavedWorkspace() {
+        const status = localProgress.status();
+        return Boolean(state.fingerprint && (workspaceDirty || status.pending || status.failed || persistenceUnavailable));
+      }
+
+      function renderReadiness() {
+        const issues = [];
+        const dates = getMissingDateCount();
+        const unassigned = state.attachments.filter(item => !item.rowId).length;
+        const unbacked = state.rows.filter(row => row.invoiceFound && !row.physicalInvoice && !attachmentCountForRow(row.id)).length;
+        if (dates) issues.push(`${dates} 筆缺消費日期`);
+        if (unassigned) issues.push(`${unassigned} 份附件待配對`);
+        if (unbacked) issues.push(`${unbacked} 筆已勾找到但尚未夾電子附件或標記實體`);
+        dom.readinessStatus.textContent = issues.length ? `匯出前請核對：${issues.join("；")}。` : "";
+        dom.readinessStatus.hidden = issues.length === 0;
+      }
+
+      async function downloadWorkspaceBackup() {
+        if (!state.fingerprint || state.busy || state.attachmentProcessing || state.exportProcessing) return;
+        state.exportProcessing = true;
+        updateCardControls();
+        try {
+          const JSZip = await loadScriptFromSources("JSZip", JSZIP_SOURCES);
+          const snapshot = captureWorkspace();
+          const zip = new JSZip();
+          const archiveFile = (record, path) => {
+            zip.file(path, record.blob);
+            const { blob, ...metadata } = record;
+            return { ...metadata, path };
+          };
+          snapshot.files = snapshot.files.map((file, i) => archiveFile(file, `statement/${i + 1}_${safeFilename(file.name)}`));
+          snapshot.cards.forEach(([tail, saved]) => {
+            saved.attachments = saved.attachments.map((item, i) => ({ ...item, file: archiveFile(item.file, `receipts/${tail}/${i + 1}_${safeFilename(item.file.name)}`) }));
+          });
+          zip.file("整理進度.json", JSON.stringify(snapshot, null, 2));
+          zip.file("備份說明.txt", "此備份含兩張卡的整理進度、原始帳單與收據。請妥善保存，勿公開分享。\n目前提供人工復原：重新匯入原始帳單、加入收據，並參照整理進度.json 核對備註和配對。\n");
+          downloadBlob(await zip.generateAsync({ type: "blob" }), `Card_完整備份_${new Date().toISOString().slice(0, 10)}.zip`);
+          toast("完整備份已下載，包含兩張卡與原始附件");
+        } catch {
+          showNotice("完整備份未完成，請保留此頁並重試。", "error");
+        } finally {
+          state.exportProcessing = false;
+          render();
+        }
+      }
+
+      async function clearCurrentLocalProgress() {
+        if (!state.fingerprint || state.busy || state.attachmentProcessing || state.exportProcessing) return;
+        if (!window.confirm("清除此帳單兩張卡的本機副本（含附件）？請先下載完整備份。清除不能復原；目前畫面會保留，繼續編輯將重新保存。")) return;
+        clearTimeout(workspaceSaveTimer);
+        clearTimeout(persistTimer);
+        workspaceDirty = false;
+        setBusy(true);
+        try {
+          await localProgress.remove(state.fingerprint);
+          for (const tail of CARD_TAILS) localStorage.removeItem(storageKey(tail));
+          localStorage.removeItem(`${LEGACY_STORAGE_PREFIX}${state.fingerprint}`);
+          workspaceCleared = true;
+          persistenceUnavailable = false;
+          toast("本期本機副本已清除；目前畫面仍保留");
+        } catch {
+          persistenceUnavailable = true;
+          showNotice("未能完整清除本機副本，請稍後重試。", "error");
+        } finally {
+          setBusy(false);
+          renderSaveStatus();
+        }
+      }
 
       function iconForNotice(type) {
         if (type === "error") {
@@ -3628,14 +3942,16 @@
       }
 
       function persistState(immediate = false) {
+        if (!state.fingerprint && (state.rows.length || state.rawText)) state.fingerprint = makeId("manual-statement");
         rememberCardState();
         clearTimeout(persistTimer);
+        queueWorkspaceSave(immediate);
         const key = storageKey();
         if (!key) return;
         // Capture the selected card now, before a later switch or async callback.
         const serialized = JSON.stringify({
           cardTail: state.cardTail,
-          rows: state.rows,
+          rows: state.rows.map(row => ({ ...row, expectedAttachmentCount: attachmentCountForRow(row.id) })),
           excluded: state.excluded,
           rawText: state.rawText,
           statementYear: state.statementYear,
@@ -3944,18 +4260,22 @@
       }
 
       function buildAttachmentNames() {
-        const used = new Map();
+        const used = new Set();
         return state.attachments.map((item) => {
           const row = state.rows.find((candidate) => candidate.id === item.rowId);
           const base = filenameBase(row, item);
           const extension = fileExtension(item.file.name, item.file.type);
-          const key = `${base}.${extension}`.toLocaleLowerCase();
-          const count = (used.get(key) || 0) + 1;
-          used.set(key, count);
+          let exportName = `${base}.${extension}`;
+          let suffix = 2;
+          while (used.has(exportName.toLocaleLowerCase())) {
+            exportName = `${base}_${suffix}.${extension}`;
+            suffix += 1;
+          }
+          used.add(exportName.toLocaleLowerCase());
           return {
             ...item,
             row,
-            exportName: `${base}${count > 1 ? `_${count}` : ""}.${extension}`
+            exportName
           };
         });
       }
@@ -3996,15 +4316,21 @@
       }
 
       function receiptCurrencyMatches(value, currency) {
-        const text = normalizeMatchText(value);
-        if (!currency) return false;
-        if (currency === "JPY") return /\bJPY\b|[¥￥]|円/.test(String(value));
-        if (currency === "TWD") return /\bTWD\b|NT\$|新台幣|臺幣|台幣/i.test(String(value));
-        if (currency === "USD") {
-          const withoutTwd = String(value).replace(/NT\$/gi, "");
-          return /\bUSD\b|US\$|\$/.test(withoutTwd);
-        }
-        return text.includes(currency);
+        return extractReceiptCurrencies(value).includes(String(currency || "").toUpperCase());
+      }
+
+      function extractReceiptCurrencies(value) {
+        const text = String(value ?? "").normalize("NFKC").toUpperCase();
+        const found = new Set(CURRENCIES.filter((currency) => new RegExp(`(?:^|[^A-Z])${currency}(?![A-Z])`).test(text)));
+        const symbols = [
+          ["USD", /(?:^|[^A-Z])US\$/], ["TWD", /NT\$|新台幣|新臺幣|臺幣|台幣/],
+          ["EUR", /€/], ["GBP", /£/], ["JPY", /¥|円/],
+          ["HKD", /HK\$/], ["CAD", /(?:^|[^A-Z])(?:CA|C)\$/],
+          ["AUD", /(?:^|[^A-Z])(?:AU|A)\$/], ["NZD", /NZ\$/],
+          ["SGD", /(?:^|[^A-Z])(?:SG|S)\$/]
+        ];
+        symbols.forEach(([currency, pattern]) => { if (pattern.test(text)) found.add(currency); });
+        return [...found];
       }
 
       function pushReceiptDate(target, year, month, day) {
@@ -4081,12 +4407,20 @@
         const numbers = extractMoneyValues(combined);
         const reasons = [];
         let score = 0;
+        let merchantMatched = false;
+        let amountMatched = false;
 
         const hasForeign = row.foreignAmount !== "" &&
           row.foreignAmount !== null &&
           row.foreignAmount !== undefined &&
           Number.isFinite(Number(row.foreignAmount));
+        const expectedCurrency = (hasForeign ? row.currency : "TWD")?.toUpperCase();
+        const receiptCurrencies = extractReceiptCurrencies(combined);
+        const currencyConflict = Boolean(expectedCurrency) &&
+          receiptCurrencies.some((currency) => currency !== expectedCurrency);
+        if (currencyConflict) reasons.push(`幣別需核對：收據 ${receiptCurrencies.join("／")}、帳單 ${expectedCurrency}`);
         if (hasForeign && hasMoneyValue(numbers, row.foreignAmount)) {
+          amountMatched = true;
           score += 58;
           reasons.push(`原幣 ${formatDecimal(row.foreignAmount)} 相符`);
           if (receiptCurrencyMatches(combined, row.currency)) {
@@ -4094,6 +4428,7 @@
             reasons.push(`${row.currency} 相符`);
           }
         } else if (hasMoneyValue(numbers, row.amount)) {
+          amountMatched = !hasForeign;
           score += hasForeign ? 38 : 58;
           reasons.push(`金額 ${formatInteger(row.amount)} 相符`);
         }
@@ -4120,12 +4455,14 @@
         }
 
         if (merchantAliasScore(description, combined)) {
+          merchantMatched = true;
           score += 26;
           reasons.push("店家關鍵字相符");
         } else {
           const identifierMatches = (description.match(/\d{6,}/g) || [])
             .filter((identifier) => compact.includes(identifier));
           if (identifierMatches.length) {
+            merchantMatched = true;
             score += 24;
             reasons.push("交易編號相符");
           }
@@ -4137,6 +4474,7 @@
           const tokens = description.split(/\s+/)
             .filter((token) => token.length >= 3 && !ignored.has(token) && !/^\d+$/.test(token));
           const matchedTokens = tokens.filter((token) => normalized.includes(token));
+          if (matchedTokens.length >= 2 && matchedTokens.length >= tokens.length / 2) merchantMatched = true;
           const tokenScore = Math.min(24, matchedTokens.length * 8);
           if (tokenScore) {
             score += tokenScore;
@@ -4149,13 +4487,21 @@
             compactDescription.length <= 30 &&
             compact.includes(compactDescription)
           ) {
+            merchantMatched = true;
             score += 18;
             reasons.push("商店名稱相符");
           }
         }
 
         if (normalized.includes(state.cardTail)) score += 2;
-        return { score, reasons: [...new Set(reasons)] };
+        // File names can rank suggestions, but cannot stand in for receipt contents.
+        const contentVerified = !receipt.fileName || scoreReceiptMatch({ text: receipt.text || "" }, row).autoEligible;
+        return {
+          score,
+          reasons: [...new Set(reasons)],
+          currencyConflict,
+          autoEligible: score >= 82 && amountMatched && merchantMatched && !currencyConflict && contentVerified
+        };
       }
 
       function matchLevel(score) {
@@ -4405,14 +4751,13 @@
           state.busy ||
           state.exportProcessing ||
           state.attachmentProcessing;
-        updateCardControls();
-
         dom.checkAll.checked = state.rows.length > 0 && counts.found === state.rows.length;
         dom.checkAll.indeterminate = counts.found > 0 && counts.found < state.rows.length;
-        dom.checkAll.disabled = state.rows.length === 0;
         renderSubscriptionGuides();
         renderReview();
         renderAccountingMail();
+        renderReadiness();
+        updateCardControls();
 
         $$(".filter-btn").forEach((button) => {
           button.classList.toggle("is-active", button.dataset.filter === state.filter);
@@ -4449,6 +4794,12 @@
         dom.receiptPickButton.disabled = locked || !state.rows.length;
         dom.rawButton.disabled = locked;
         dom.reparseButton.disabled = locked;
+        dom.backupButton.disabled = locked || !state.fingerprint;
+        dom.clearLocalButton.disabled = locked || !state.fingerprint;
+        dom.addRowButton.disabled = locked;
+        dom.checkAll.disabled = locked || !state.rows.length;
+        dom.tableBody.querySelectorAll("input, button").forEach(control => { control.disabled = locked; });
+        dom.reviewGrid.querySelectorAll("select, button").forEach(control => { control.disabled = locked; });
       }
 
       async function loadScriptFromSources(globalName, sources) {
@@ -4679,9 +5030,18 @@
             }));
           }
 
-          state.rawText = texts.join("\n\n===== 下一頁 =====\n\n");
-          state.statementRawText = state.rawText;
+          const nextRawText = texts.join("\n\n===== 下一頁 =====\n\n");
           const parsed = parseStatementText(texts, state.statementYear, state.cardTail);
+          if (!parsed.rows.length && (state.rows.length || state.attachments.length || state.rawText)) {
+            setProgress(100, "未套用本次辨識，已保留原進度");
+            showNotice(
+              `本次沒有抓到尾號 <strong>${state.cardTail}</strong> 的消費，已保留原本的消費、備註、附件與辨識原文。請確認帳單清楚後重試；也可開啟「辨識原文」手動修正。`,
+              "warning"
+            );
+            return;
+          }
+          state.rawText = nextRawText;
+          state.statementRawText = nextRawText;
           applyParsedCardResult(parsed);
           setProgress(100, "辨識完成");
 
@@ -4771,7 +5131,21 @@
         };
       }
 
-      function selectFiles(fileList) {
+      async function selectStoredFiles(files) {
+        persistState(true);
+        setBusy(true);
+        let saved = null;
+        try {
+          saved = await localProgress.load(buildFingerprint(files));
+        } catch {
+          persistenceUnavailable = true;
+        }
+        setBusy(false);
+        if (hasUnsavedWorkspace() && !window.confirm("目前進度尚未成功保存。建議先取消並下載完整備份；仍要更換帳單嗎？")) return;
+        selectFiles(files, saved);
+      }
+
+      function selectFiles(fileList, savedWorkspace) {
         if (state.busy || state.attachmentProcessing || state.exportProcessing) return;
         const files = [...fileList].filter((file) =>
           /^(image\/jpeg|image\/png|image\/webp|application\/pdf)$/i.test(file.type) ||
@@ -4787,6 +5161,12 @@
           toast("這份帳單已載入，保留目前的整理進度與附件");
           return;
         }
+        if (arguments.length === 1) return selectStoredFiles(files);
+        if (savedWorkspace) {
+          applyWorkspace(savedWorkspace);
+          persistState(true);
+          return;
+        }
         persistState(true);
         releaseCardSessions();
         state.files = files;
@@ -4794,6 +5174,7 @@
         state.statementRawText = "";
         resetCardState();
         dom.searchInput.value = "";
+        workspaceCleared = false;
 
         dom.dropZone.classList.add("has-file");
         dom.fileName.textContent = files.length === 1 ? files[0].name : `${files[0].name} 等 ${files.length} 個檔案`;
@@ -4813,6 +5194,7 @@
           setProgress(100, "已載入上次進度");
           render();
           showCardSummary("已載入這份帳單上次的整理進度，");
+          persistState();
         } else if (restoreSharedRawText()) {
           parseSelectedCard(state.statementRawText);
           dom.statementYear.value = state.statementYear;
@@ -4822,7 +5204,7 @@
           showCardSummary("已載入");
         } else {
           hideNotice();
-          window.setTimeout(runOCR, 180);
+          queueWorkspaceSave();
         }
       }
 
@@ -4881,6 +5263,7 @@
         dom.foundCount.textContent = `(${counts.found})`;
         renderSubscriptionGuides();
         renderAccountingMail();
+        renderReadiness();
       }
 
       function handleTableFocus(event) {
@@ -5269,7 +5652,6 @@
 
         items.forEach((item) => {
           state.rows.forEach((row) => {
-            if (occupiedRows.has(row.id)) return;
             const result = scoreReceiptMatch({
               fileName: item.file.name,
               text: item.extractedText
@@ -5278,12 +5660,38 @@
           });
         });
         candidates.sort((left, right) => right.score - left.score);
+        const reviewReasons = new Map();
+        const bestCandidates = new Map();
+        items.forEach((item) => {
+          const ranked = candidates.filter((candidate) => candidate.item.id === item.id);
+          bestCandidates.set(item.id, ranked[0]);
+          if (ranked[0]?.currencyConflict) {
+            reviewReasons.set(item.id, "幣別衝突，待確認");
+          } else if (ranked.length > 1 && ranked[0].score - ranked[1].score <= 12) {
+            reviewReasons.set(item.id, "多筆消費相近，待確認");
+          } else if (ranked[0] && occupiedRows.has(ranked[0].row.id)) {
+            reviewReasons.set(item.id, "最符合的消費已有附件，待確認");
+          } else if (!ranked[0]?.autoEligible) {
+            reviewReasons.set(item.id, "店家與金額證據不足，待確認");
+          }
+        });
+
+        state.rows.forEach((row) => {
+          const contenders = [...bestCandidates.values()]
+            .filter((candidate) => candidate?.row.id === row.id)
+            .sort((left, right) => right.score - left.score);
+          if (contenders.length > 1 && contenders[0].score - contenders[1].score <= 12) {
+            contenders.forEach((candidate) => reviewReasons.set(candidate.item.id, "多份附件符合同一筆消費，待確認"));
+          }
+        });
 
         const assignedItems = new Set();
         const assignedRows = new Set();
         candidates.forEach((candidate) => {
           if (
             candidate.score < 44 ||
+            bestCandidates.get(candidate.item.id) !== candidate ||
+            reviewReasons.has(candidate.item.id) ||
             assignedItems.has(candidate.item.id) ||
             assignedRows.has(candidate.row.id)
           ) return;
@@ -5304,7 +5712,14 @@
           item.status = "unmatched";
           item.matchScore = best?.score || 0;
           item.matchLevel = "unmatched";
-          item.matchReasons = best?.reasons || [];
+          if (!reviewReasons.has(item.id) && best && assignedRows.has(best.row.id)) {
+            reviewReasons.set(item.id, "最符合的消費已配對其他附件，待確認");
+          }
+          item.matchReasons = [...new Set([
+            ...(item.matchReasons || []),
+            ...(best?.reasons || []),
+            ...(reviewReasons.has(item.id) ? [reviewReasons.get(item.id)] : [])
+          ])];
         });
       }
 
@@ -5383,7 +5798,7 @@
               item.extractedText = await extractAttachmentText(item.file, getOcrWorker);
             } catch (error) {
               console.error(`附件文字讀取失敗：${item.file.name}`, error);
-              item.extractedText = item.file.name;
+              item.extractedText = "";
               item.matchReasons = ["文字讀取不完整"];
             }
           }
@@ -5607,6 +6022,8 @@
 
       dom.addRowButton.addEventListener("click", addRow);
       dom.excelExportButton.addEventListener("click", downloadExcel);
+      dom.backupButton.addEventListener("click", downloadWorkspaceBackup);
+      dom.clearLocalButton.addEventListener("click", clearCurrentLocalProgress);
       dom.exportButton.addEventListener("click", exportReceiptZip);
       dom.receiptPickButton.addEventListener("click", () => dom.receiptInput.click());
       dom.receiptInput.addEventListener("change", () => {
@@ -5633,6 +6050,7 @@
         autoAttachReceiptFiles(event.dataTransfer.files);
       });
       dom.reviewGrid.addEventListener("change", (event) => {
+        if (state.busy || state.attachmentProcessing || state.exportProcessing) return;
         const select = event.target.closest(".attachment-row-select");
         if (!select) return;
         const card = select.closest("[data-attachment-id]");
@@ -5643,6 +6061,7 @@
         toast(select.value ? "附件配對已更新" : "附件已改為未配對");
       });
       dom.reviewGrid.addEventListener("click", (event) => {
+        if (state.busy || state.attachmentProcessing || state.exportProcessing) return;
         const card = event.target.closest("[data-attachment-id]");
         if (!card) return;
         if (event.target.closest(".remove-attachment")) {
@@ -5664,19 +6083,26 @@
         if (event.target === dom.rawDialog) dom.rawDialog.close();
       });
 
-      window.addEventListener("beforeunload", () => {
-        persistState(true);
-        if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
-        releaseCardSessions();
+      window.addEventListener("beforeunload", (event) => {
+        if (workspaceDirty) queueWorkspaceSave(true);
+        if (hasUnsavedWorkspace() || state.attachmentProcessing || state.busy || state.exportProcessing) {
+          event.preventDefault();
+          event.returnValue = "";
+        }
       });
 
       dom.statementYear.value = state.statementYear;
       render();
 
-      const query = new URLSearchParams(window.location.search);
-      if (query.get("demo") === "1" || window.location.hash === "#demo=1") loadDemo();
+      const progressReady = startLocalProgress();
 
       window.CompanyCard2388 = {
+        ready: progressReady,
+        saveProgress: async () => {
+          queueWorkspaceSave(true);
+          await localProgress.flush();
+          if (hasUnsavedWorkspace()) throw new Error("完整進度尚未成功保存");
+        },
         parseStatementText,
         splitTransactionRecords,
         getState: () => structuredClone({
@@ -5702,11 +6128,13 @@
         autoMatchFiles: autoAttachReceiptFiles,
         scoreReceiptMatch,
         setPhysicalInvoice: (rowId, value) => {
+          if (state.busy || state.attachmentProcessing || state.exportProcessing) return false;
           const row = state.rows.find((candidate) => candidate.id === rowId);
           if (!row) return false;
           row.physicalInvoice = Boolean(value);
           if (row.physicalInvoice) row.invoiceFound = true;
           render();
+          persistState();
           return true;
         },
         getFilenameLabel: filenameLabel,

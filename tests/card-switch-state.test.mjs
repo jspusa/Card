@@ -31,7 +31,8 @@ function setup({ stored = [] } = {}) {
       accountingMailSignature: "", accountingMailText: "", files: [],
       busy: false, attachmentProcessing: false, exportProcessing: false
     },
-    cardSessions: new Map(), persistTimer: 0,
+    cardSessions: new Map(), persistTimer: 0, workspaceCleared: false,
+    queueWorkspaceSave: () => {},
     dom: {
       receiptProgress: { textContent: "" }, statementYear: {}, searchInput: {}, cardTailSelect: {},
       dropZone: { classList: { add: () => {} } }, fileName: {}, fileMeta: {}
@@ -118,7 +119,8 @@ test("selecting a different statement flushes pending edits to the old fingerpri
   const { context: ctx, values, pending } = setup();
   ctx.state.rows[0].note = "save before replacement";
   ctx.persistState();
-  ctx.selectFiles([{ name: "next.pdf", size: 200, lastModified: 456, type: "application/pdf" }]);
+  // The async storage/confirmation boundary is covered by statement-restore-safety.
+  ctx.selectFiles([{ name: "next.pdf", size: 200, lastModified: 456, type: "application/pdf" }], null);
   pending.forEach((callback) => callback());
   assert.equal(ctx.state.fingerprint, "next.pdf:200:456");
   assert.equal(ctx.state.rows.length, 0);

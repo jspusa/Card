@@ -49,6 +49,28 @@ test('page reopens with both card receipts, edit flags and exact original bytes'
   assert.equal(await files['receipts/7802/1_travel.pdf'].text(), 'travel bytes');
 });
 
+test('excluded receipts remain reversible after reopening without leaking into the other card', async () => {
+  const db = database();
+  const app = await start(db);
+  importRows(app);
+  app.api.attachFiles(app.api.getState().rows[0].id, [receipt('not-this-period.pdf', 'retained original')]);
+  const excludedId = app.api.getState().attachments[0].id;
+  app.api.setAttachmentExcluded(excludedId, true);
+  app.api.switchCardTail('7802');
+  app.api.attachFiles(app.api.getState().rows[0].id, [receipt('other-card.pdf', 'other card original')]);
+  await app.api.saveProgress();
+  const reopened = await start(db);
+  assert.equal(reopened.api.getState().attachments[0].name, 'other-card.pdf');
+  assert.equal(reopened.api.getState().attachments[0].excludedFromPeriod, false);
+  reopened.api.switchCardTail('2388');
+  assert.equal(reopened.api.getState().attachments[0].excludedFromPeriod, true);
+  assert.equal(reopened.api.getState().attachments[0].rowId, '');
+  reopened.api.setAttachmentExcluded(excludedId, false);
+  assert.equal(reopened.api.getState().attachments[0].excludedFromPeriod, false);
+  await reopened.elements.get('#backupButton').click();
+  assert.equal(await reopened.archives.at(-1).files['receipts/2388/1_not-this-period.pdf'].text(), 'retained original');
+});
+
 test('a failed save warns persistently, preserves the working copy and protects leaving', async () => {
   const db = database();
   const write = db.write;

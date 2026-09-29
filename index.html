@@ -2707,6 +2707,7 @@
           </svg>
           選擇多個附件
         </button>
+        <button class="btn" id="receiptStopButton" type="button" style="display:none">停止辨識，改手動配對</button>
         <input class="sr-only" id="receiptInput" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple>
         <input class="sr-only" id="rowReceiptInput" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple>
       </div>
@@ -3101,6 +3102,7 @@
         receiptDropZone: $("#receiptDropZone"),
         receiptProgress: $("#receiptProgress"),
         receiptPickButton: $("#receiptPickButton"),
+        receiptStopButton: $("#receiptStopButton"),
         receiptInput: $("#receiptInput"),
         rowReceiptInput: $("#rowReceiptInput"),
         reviewGrid: $("#reviewGrid"),
@@ -5560,18 +5562,26 @@
         );
       }
 
-      async function createReceiptOcrWorker() {
+      async function createReceiptOcrWorker(onProgress, onWorker, onError) {
         const Tesseract = await loadScriptFromSources("Tesseract", TESSERACT_SOURCES);
-        const worker = await Tesseract.createWorker(["chi_tra", "eng", "jpn"], Tesseract.OEM.LSTM_ONLY, {
-          workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
-          corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1",
-          langPath: "https://tessdata.projectnaptha.com/4.0.0",
-          logger(message) {
-            if (message.status === "recognizing text") {
-              dom.receiptProgress.textContent =
-                `正在辨識圖片文字 ${Math.round(Number(message.progress || 0) * 100)}%`;
+        const worker = await new Promise((resolve, reject) => {
+          Tesseract.createWorker(["chi_tra", "eng", "jpn"], Tesseract.OEM.LSTM_ONLY, {
+            workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
+            corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1",
+            // Keep all supported languages, using the smaller LSTM-only models.
+            cachePath: "card-receipt-lstm-v1",
+            logger: onProgress,
+            // Initialization errors must reject creation. Once ready, each
+            // failed recognize job rejects its own promise, not the batch.
+            errorHandler(error) { reject(error); onError(error); }
+          }).then((createdWorker) => {
+            // Also release a worker whose initialization finishes after cancel.
+            if (!onWorker(createdWorker)) {
+              reject(new Error("本批辨識已結束"));
+              return;
             }
-          }
+            resolve(createdWorker);
+          }, reject);
         });
         await worker.setParameters({
           tessedit_pageseg_mode: Tesseract.PSM.AUTO,
@@ -5583,25 +5593,29 @@
 
       async function extractPdfAttachmentText(file, getOcrWorker) {
         const pdf = await loadPdfDocument(file);
-        const pageTexts = [];
-        const pageCount = Math.min(pdf.numPages, 4);
+        try {
+          const pageTexts = [];
+          const pageCount = Math.min(pdf.numPages, 4);
 
-        for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
-          const page = await pdf.getPage(pageNumber);
-          const textContent = await page.getTextContent();
-          pageTexts.push(textContent.items.map((item) => item.str || "").join(" "));
-        }
+          for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
+            const page = await pdf.getPage(pageNumber);
+            const textContent = await page.getTextContent();
+            pageTexts.push(textContent.items.map((item) => item.str || "").join(" "));
+          }
 
-        let text = pageTexts.join("\n");
-        const needsOcr = compactMatchText(text).length < 40 || extractMoneyValues(text).length === 0;
-        if (needsOcr) {
-          const canvas = await renderPdfPage(pdf, 1, 2);
-          const worker = await getOcrWorker();
-          const result = await worker.recognize(canvas);
-          text += `\n${result.data.text || ""}`;
+          let text = pageTexts.join("\n");
+          const needsOcr = compactMatchText(text).length < 40 || extractMoneyValues(text).length === 0;
+          if (needsOcr) {
+            const canvas = await renderPdfPage(pdf, 1, 2);
+            const worker = await getOcrWorker();
+            const result = await worker.recognize(canvas);
+            text += `\n${result.data.text || ""}`;
+          }
+          return text;
+        } finally {
+          // Cleanup must not keep the receipt UI locked if a library stalls.
+          try { Promise.resolve(pdf.destroy()).catch(() => {}); } catch {}
         }
-        await pdf.destroy();
-        return text;
       }
 
       async function extractAttachmentText(file, getOcrWorker) {
@@ -5752,6 +5766,12 @@
         toast(`已替「${row.description || "這筆消費"}」加入 ${files.length} 個附件`);
       }
 
+      let activeReceiptBatch = null;
+
+      function stopReceiptRecognition() {
+        activeReceiptBatch?.stop("已停止辨識，請手動配對；原始附件已保留");
+      }
+
       async function autoAttachReceiptFiles(fileList) {
         if (state.busy || state.exportProcessing || !state.rows.length) return;
         if (state.attachmentProcessing) {
@@ -5768,6 +5788,7 @@
         updateCardControls();
         dom.receiptDropZone.classList.add("is-processing");
         dom.receiptPickButton.disabled = true;
+        dom.receiptStopButton.style.display = "";
         dom.exportButton.disabled = true;
 
         const items = files.map((file) => ({
@@ -5782,24 +5803,95 @@
         }));
         state.attachments.push(...items);
         renderReview();
+        // Save the original files before starting any network-dependent OCR.
+        persistState();
 
         let ocrWorker = null;
+        let workerPromise = null;
+        let interrupt;
+        let rejectCurrentRead;
+        let currentIndex = 0;
+        const interruption = new Promise((_, reject) => { interrupt = reject; });
+        interruption.catch(() => {});
+        const releaseWorker = (worker) => {
+          try { Promise.resolve(worker?.terminate()).catch(() => {}); } catch {}
+        };
+        const batch = {
+          stopped: false,
+          reason: "",
+          stop(reason) {
+            if (batch.stopped || activeReceiptBatch !== batch) return;
+            batch.stopped = true;
+            batch.reason = reason;
+            interrupt(new Error(reason));
+            releaseWorker(ocrWorker);
+            ocrWorker = null;
+          }
+        };
+        activeReceiptBatch = batch;
+        const reportProgress = (message) => {
+          if (activeReceiptBatch !== batch || batch.stopped) return;
+          const labels = {
+            "loading tesseract core": "載入辨識引擎",
+            "initializing tesseract": "初始化辨識引擎",
+            "loading language traineddata": "載入中英日文辨識資料（首次較久）",
+            "initializing api": "準備辨識",
+            "recognizing text": "辨識圖片文字"
+          };
+          const percentage = Number.isFinite(message.progress)
+            ? ` ${Math.round(Math.max(0, Math.min(1, message.progress)) * 100)}%` : "";
+          dom.receiptProgress.textContent =
+            `第 ${currentIndex + 1} / ${items.length} 份：${labels[message.status] || "準備辨識"}${percentage}｜${items[currentIndex].file.name}`;
+        };
         const getOcrWorker = async () => {
-          if (!ocrWorker) ocrWorker = await createReceiptOcrWorker();
-          return ocrWorker;
+          if (batch.stopped) throw new Error(batch.reason);
+          if (!workerPromise) {
+            reportProgress({ status: "loading tesseract core" });
+            workerPromise = createReceiptOcrWorker(reportProgress, (worker) => {
+              if (batch.stopped || activeReceiptBatch !== batch) {
+                releaseWorker(worker);
+                return false;
+              }
+              ocrWorker = worker;
+              return true;
+            }, (error) => {
+              if (activeReceiptBatch === batch && !batch.stopped) rejectCurrentRead?.(error);
+            });
+          }
+          const worker = await workerPromise;
+          if (batch.stopped || activeReceiptBatch !== batch) throw new Error(batch.reason || "本批辨識已結束");
+          return worker;
         };
 
         try {
           for (let index = 0; index < items.length; index += 1) {
+            currentIndex = index;
             const item = items[index];
+            if (batch.stopped) {
+              item.matchReasons = [batch.reason];
+              continue;
+            }
             dom.receiptProgress.textContent =
-              `正在讀取第 ${index + 1} / ${items.length} 份：${item.file.name}`;
+              `正在讀取第 ${index + 1} / ${items.length} 份：${item.file.name}（可隨時停止並手動配對）`;
+            let deadline;
             try {
-              item.extractedText = await extractAttachmentText(item.file, getOcrWorker);
+              item.extractedText = await Promise.race([
+                new Promise((_, reject) => { rejectCurrentRead = reject; }),
+                interruption,
+                extractAttachmentText(item.file, getOcrWorker),
+                new Promise((_, reject) => {
+                  deadline = window.setTimeout(() => {
+                    batch.stop("文字辨識超過 90 秒，已改為手動配對；原始附件已保留");
+                    reject(new Error(batch.reason));
+                  }, 90000);
+                })
+              ]);
             } catch (error) {
-              console.error(`附件文字讀取失敗：${item.file.name}`, error);
               item.extractedText = "";
-              item.matchReasons = ["文字讀取不完整"];
+              item.matchReasons = [batch.reason || "文字讀取不完整，請手動配對"];
+            } finally {
+              rejectCurrentRead = null;
+              clearTimeout(deadline);
             }
           }
 
@@ -5817,17 +5909,13 @@
             unmatched ? "warning" : "success"
           );
         } finally {
-          if (ocrWorker) {
-            try {
-              await ocrWorker.terminate();
-            } catch {
-              // OCR worker cleanup never blocks matching results.
-            }
-          }
+          releaseWorker(ocrWorker);
+          if (activeReceiptBatch === batch) activeReceiptBatch = null;
           state.attachmentProcessing = false;
           updateCardControls();
           dom.receiptDropZone.classList.remove("is-processing");
           dom.receiptPickButton.disabled = false;
+          dom.receiptStopButton.style.display = "none";
           dom.exportButton.disabled = state.rows.length === 0 || state.attachments.length === 0;
         }
       }
@@ -6026,6 +6114,7 @@
       dom.clearLocalButton.addEventListener("click", clearCurrentLocalProgress);
       dom.exportButton.addEventListener("click", exportReceiptZip);
       dom.receiptPickButton.addEventListener("click", () => dom.receiptInput.click());
+      dom.receiptStopButton.addEventListener("click", stopReceiptRecognition);
       dom.receiptInput.addEventListener("change", () => {
         autoAttachReceiptFiles(dom.receiptInput.files);
         dom.receiptInput.value = "";

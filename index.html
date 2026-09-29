@@ -1249,6 +1249,35 @@
       box-shadow: 0 0 0 3px rgba(124, 75, 194, .1);
     }
 
+    .accounting-mail-field {
+      display: grid;
+      gap: 6px;
+      color: var(--slate-600);
+      font-size: 13px;
+    }
+
+    .accounting-mail-field input,
+    .accounting-mail-field select {
+      width: 100%;
+      min-height: 42px;
+      padding: 9px 12px;
+      border: 1px solid #d8c8f2;
+      border-radius: var(--radius-md);
+      background: var(--white);
+      color: var(--navy-950);
+      font: inherit;
+    }
+
+    .accounting-mail-status {
+      margin: 0;
+      color: var(--slate-600);
+      font-size: 13px;
+    }
+
+    .accounting-mail-status.is-stale {
+      color: #b42318;
+    }
+
     .accounting-mail-actions {
       display: flex;
       align-items: center;
@@ -1264,6 +1293,7 @@
 
     .accounting-mail-buttons {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
     }
 
@@ -2719,18 +2749,28 @@
       <div class="review-grid" id="reviewGrid"></div>
     </section>
 
-    <section class="surface accounting-mail-panel" id="accountingMailPanel" aria-label="給會計的實體發票通知">
+    <section class="surface accounting-mail-panel" id="accountingMailPanel" aria-label="報帳信件">
       <div class="review-head">
         <div>
-          <h2>給會計的實體發票通知</h2>
-          <p>先在上方標記實體發票，再按「生成信件」產生可複製的通知。</p>
+          <h2>報帳信件</h2>
+          <p>依目前卡片整理報帳通知，核對後可編輯、複製或下載信件草稿；不會自動寄送。</p>
         </div>
-        <span class="review-count" id="accountingMailCount">0 筆實體發票</span>
+        <span class="review-count" id="accountingMailCount">0 筆報帳項目</span>
       </div>
       <div class="accounting-mail-body">
-        <textarea class="accounting-mail-text" id="accountingMailText" readonly aria-label="給會計的實體發票通知內容"></textarea>
+        <label class="accounting-mail-field">信件內容
+          <select id="accountingMailMode">
+            <option value="report">本期報帳通知</option>
+            <option value="physical">實體發票通知</option>
+          </select>
+        </label>
+        <label class="accounting-mail-field">主旨
+          <input id="accountingMailSubject" type="text" placeholder="生成信件後可編輯主旨" autocomplete="off">
+        </label>
+        <textarea class="accounting-mail-text" id="accountingMailText" aria-label="報帳信件草稿內容" placeholder="按「生成信件」整理目前卡片的明細，再編輯這裡的內容。"></textarea>
+        <p class="accounting-mail-status" id="accountingMailStatus" role="status" aria-live="polite"></p>
         <div class="accounting-mail-actions">
-          <p class="accounting-mail-help">修改勾選、日期、商店、金額或備註後，需要重新生成。</p>
+          <p class="accounting-mail-help">.eml 草稿不含附件；請自行夾入 Excel／發票 ZIP，由你確認收件人、內容與附件後寄出。修改明細或配對後，舊稿會保留並標示過期；重新生成會取代編輯內容。</p>
           <div class="accounting-mail-buttons">
             <button class="btn generate-accounting-mail" id="generateAccountingMailButton" type="button" disabled>
               生成信件
@@ -2742,6 +2782,7 @@
               </svg>
               複製信件
             </button>
+            <button class="btn" id="downloadAccountingMailButton" type="button" disabled>下載 .eml 草稿</button>
           </div>
         </div>
       </div>
@@ -3110,9 +3151,13 @@
         reviewGrid: $("#reviewGrid"),
         accountingMailPanel: $("#accountingMailPanel"),
         accountingMailCount: $("#accountingMailCount"),
+        accountingMailMode: $("#accountingMailMode"),
+        accountingMailSubject: $("#accountingMailSubject"),
         accountingMailText: $("#accountingMailText"),
+        accountingMailStatus: $("#accountingMailStatus"),
         generateAccountingMailButton: $("#generateAccountingMailButton"),
         copyAccountingMailButton: $("#copyAccountingMailButton"),
+        downloadAccountingMailButton: $("#downloadAccountingMailButton"),
         toast: $("#toast"),
         localSaveStatus: $("#localSaveStatus"),
         readinessStatus: $("#readinessStatus"),
@@ -3138,6 +3183,8 @@
         attachmentProcessing: false,
         exportProcessing: false,
         accountingMailSignature: "",
+        accountingMailMode: "report",
+        accountingMailSubject: "",
         accountingMailText: "",
         statementYear: new Date().getFullYear()
       };
@@ -3222,9 +3269,12 @@
         dom.fileName.textContent = files.map(file => file.name).join("、") || "手動整理資料";
         dom.fileMeta.textContent = "已還原本機完整進度";
         if (files.length) void updatePreview(files);
-        setProgress(100, "已還原本機進度與附件");
+        const awaitingRecognition = files.length && !state.statementRawText && !state.rawText && !state.rows.length;
+        setProgress(awaitingRecognition ? 0 : 100, awaitingRecognition
+          ? "已還原帳單檔案，等待開始辨識" : "已還原本機進度與附件");
         render();
-        showCardSummary("已還原");
+        if (awaitingRecognition) hideNotice();
+        else showCardSummary("已還原");
       }
 
       function queueWorkspaceSave(immediate = false) {
@@ -3939,6 +3989,8 @@
           search: state.search,
           showAdvancedColumns: state.showAdvancedColumns,
           accountingMailSignature: state.accountingMailSignature,
+          accountingMailMode: state.accountingMailMode,
+          accountingMailSubject: state.accountingMailSubject,
           accountingMailText: state.accountingMailText,
           statementYear: state.statementYear,
           receiptProgress: dom.receiptProgress.textContent
@@ -3990,7 +4042,8 @@
       function resetCardState() {
         Object.assign(state, {
           rows: [], excluded: [], rawText: "", attachments: [], attachmentTargetId: "",
-          filter: "all", search: "", accountingMailSignature: "", accountingMailText: ""
+          filter: "all", search: "", accountingMailSignature: "", accountingMailMode: "report",
+          accountingMailSubject: "", accountingMailText: ""
         });
         dom.receiptProgress.textContent = "";
       }
@@ -4000,6 +4053,9 @@
         if (cached) {
           const { receiptProgress, ...savedState } = cached;
           Object.assign(state, savedState);
+          state.accountingMailMode = savedState.accountingMailMode === "physical" ||
+            (!savedState.accountingMailMode && savedState.accountingMailText) ? "physical" : "report";
+          state.accountingMailSubject = savedState.accountingMailSubject || "";
           dom.receiptProgress.textContent = receiptProgress || "";
         } else {
           const saved = readSavedCard(state.cardTail);
@@ -4650,70 +4706,115 @@
       }
 
       function buildAccountingMail() {
-        const physicalRows = state.rows.filter((row) => row.physicalInvoice);
-        if (!physicalRows.length) {
-          return "";
-        }
-
-        const items = physicalRows.map((row, index) => {
+        const physicalOnly = state.accountingMailMode === "physical";
+        const rows = physicalOnly ? state.rows.filter(row => row.physicalInvoice) : state.rows;
+        if (!rows.length) return "";
+        const attachments = buildAttachmentNames().filter(item => !item.excludedFromPeriod);
+        const filesForRow = row => attachments.filter(item => item.rowId === row.id);
+        const physical = rows.filter(row => row.physicalInvoice).length;
+        // These are disjoint categories: a physical receipt may additionally have a scan.
+        const electronic = rows.filter(row => !row.physicalInvoice && filesForRow(row).length).length;
+        const missing = rows.length - physical - electronic;
+        const total = rows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+        const items = rows.map((row, index) => {
           const note = String(row.note || "").trim();
           const description = String(row.description || "").trim();
+          const files = filesForRow(row);
+          const status = row.physicalInvoice ? "實體發票" : files.length ? "電子附件" :
+            row.invoiceFound ? "缺少憑證（已勾選找到，但尚未夾電子附件或標記實體）" : "缺少憑證";
           const parts = [
             `${index + 1}. ${slashDate(row.transactionDate) || "未填日期"}`,
             description || "未填商店",
-            accountingMailAmount(row)
+            accountingMailAmount(row),
+            status
           ];
           if (note) parts.push(`備註：${note}`);
-          return parts.join("｜");
+          return [parts.join("｜"), ...files.map(item => `   可夾帶附件：${item.exportName}`)].join("\n");
         });
-        const total = physicalRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
-
+        const matchedFiles = attachments.filter(item => rows.some(row => row.id === item.rowId));
+        const pendingFiles = physicalOnly ? [] : attachments.filter(item => !state.rows.some(row => row.id === item.rowId));
         return [
           "您好，",
           "",
-          `公司卡尾號 ${state.cardTail}：以下 ${physicalRows.length} 筆報帳項目的發票為實體發票：`,
+          `公司卡尾號 ${state.cardTail}：${physicalOnly ? "以下項目另有實體發票，交付方式請另行確認。" : "本期報帳明細如下，請協助核對。"}`,
+          `${physicalOnly ? "實體發票" : "本期報帳"}共 ${rows.length} 筆，台幣金額合計 NT$${formatInteger(total)}。`,
+          `憑證狀態：電子附件 ${electronic} 筆、實體發票 ${physical} 筆、缺少憑證 ${missing} 筆。`,
+          `發票勾選找到：${rows.filter(row => row.invoiceFound).length} / ${rows.length}（勾選不代表附件齊全）。`,
           "",
           ...items,
           "",
-          `實體發票共 ${physicalRows.length} 張，台幣金額合計 NT$${formatInteger(total)}。`,
-          "以上發票我會再帶至辦公室交付。",
+          `可夾帶的本期已配對附件共 ${matchedFiles.length} 份（實體發票如另有掃描檔，也列於上方）。`,
+          ...(pendingFiles.length ? [
+            "",
+            `待確認附件 ${pendingFiles.length} 份（尚未配對，不作為已核對憑證）：`,
+            ...pendingFiles.map(item => `- ${item.exportName}`)
+          ] : []),
+          "",
+          "此草稿不含附件；請自行夾入報帳 Excel 與發票 ZIP，核對內容、收件人及實際附件後再寄出。",
           "",
           "謝謝。"
         ].join("\n");
       }
 
+      function buildAccountingMailSubject() {
+        const physicalOnly = state.accountingMailMode === "physical";
+        const rows = physicalOnly ? state.rows.filter(row => row.physicalInvoice) : state.rows;
+        const total = rows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+        return `公司卡 ${state.cardTail} ${physicalOnly ? "實體發票通知" : "報帳通知"}｜${exportMonth()}｜NT$${formatInteger(total)}`;
+      }
+
       function accountingMailSignature() {
-        return JSON.stringify(
-          state.rows
-            .filter((row) => row.physicalInvoice)
-            .map((row) => [
-              row.id,
-              row.transactionDate,
-              row.description,
-              row.amount,
-              row.currency,
-              row.foreignAmount,
-              row.note
-            ])
-        );
+        return JSON.stringify({
+          cardTail: state.cardTail,
+          statementYear: state.statementYear,
+          mode: state.accountingMailMode,
+          rows: state.rows.map(row => [
+            row.id, row.transactionDate, row.postingDate, row.description, row.amount,
+            row.currency, row.foreignAmount, row.note, row.invoiceFound, row.physicalInvoice
+          ]),
+          attachments: buildAttachmentNames().map(item => [
+            item.id, item.rowId, item.exportName, Boolean(item.excludedFromPeriod), item.status
+          ])
+        });
+      }
+
+      function accountingMailIsCurrent() {
+        return Boolean(state.accountingMailText.trim() && state.accountingMailSubject.trim() &&
+          state.accountingMailSignature === accountingMailSignature());
+      }
+
+      function updateAccountingMailControls() {
+        const locked = state.busy || state.attachmentProcessing || state.exportProcessing;
+        const count = state.accountingMailMode === "physical"
+          ? state.rows.filter(row => row.physicalInvoice).length : state.rows.length;
+        const current = accountingMailIsCurrent();
+        dom.accountingMailMode.disabled = locked;
+        dom.accountingMailSubject.disabled = locked;
+        dom.accountingMailText.disabled = locked;
+        dom.generateAccountingMailButton.disabled = locked || count === 0;
+        dom.copyAccountingMailButton.disabled = locked || !current;
+        dom.downloadAccountingMailButton.disabled = locked || !current;
       }
 
       function renderAccountingMail() {
-        const physicalCount = state.rows.filter((row) => row.physicalInvoice).length;
-        const currentSignature = accountingMailSignature();
-        if (state.accountingMailSignature !== currentSignature) {
-          state.accountingMailSignature = "";
-          state.accountingMailText = "";
-        }
+        const physicalOnly = state.accountingMailMode === "physical";
+        const count = physicalOnly ? state.rows.filter(row => row.physicalInvoice).length : state.rows.length;
+        const hasDraft = Boolean(state.accountingMailText || state.accountingMailSubject);
+        const stale = hasDraft && state.accountingMailSignature !== accountingMailSignature();
+        const current = accountingMailIsCurrent();
         dom.accountingMailPanel.classList.toggle("is-visible", state.rows.length > 0);
-        dom.accountingMailCount.textContent = `${physicalCount} 筆實體發票`;
-        dom.accountingMailText.value = state.accountingMailText || (
-          physicalCount
-            ? `已標記 ${physicalCount} 筆實體發票。\n\n請按下方「生成信件」產生通知內容。`
-            : "目前尚未標記實體發票。\n\n請先在上方表格勾選「實體」。"
-        );
-        dom.generateAccountingMailButton.disabled = physicalCount === 0;
-        dom.copyAccountingMailButton.disabled = !state.accountingMailText;
+        dom.accountingMailCount.textContent = `${count} 筆${physicalOnly ? "實體發票" : "報帳項目"}`;
+        dom.accountingMailMode.value = state.accountingMailMode;
+        // Use form values/textContent, never HTML, for private user-entered metadata.
+        dom.accountingMailSubject.value = state.accountingMailSubject;
+        dom.accountingMailText.value = state.accountingMailText;
+        dom.accountingMailStatus.textContent = stale
+          ? "明細、附件或信件模式已變更；草稿已過期，已保留你的文字。請核對並重新生成後，再複製或下載。"
+          : hasDraft ? (current ? "草稿可繼續編輯；僅保存在此瀏覽器，尚未寄送，也未夾入附件。" : "請填寫主旨與正文後再複製或下載。")
+            : count ? "請按「生成信件」建立目前卡片的草稿。" : "請先在上方表格標記實體發票。";
+        dom.accountingMailStatus.classList.toggle("is-stale", stale);
+        dom.generateAccountingMailButton.textContent = hasDraft ? "重新生成（取代草稿）" : "生成信件";
+        updateAccountingMailControls();
       }
 
       function renderReview() {
@@ -4926,6 +5027,7 @@
           const id = control.closest?.("[data-attachment-id]")?.dataset.attachmentId;
           if (state.attachments.find(item => item.id === id)?.excludedFromPeriod) control.disabled = true;
         });
+        updateAccountingMailControls();
       }
 
       async function loadScriptFromSources(globalName, sources) {
@@ -5320,7 +5422,7 @@
           setProgress(100, "已載入上次進度");
           render();
           showCardSummary("已載入這份帳單上次的整理進度，");
-          persistState();
+          persistState(true);
         } else if (restoreSharedRawText()) {
           parseSelectedCard(state.statementRawText);
           dom.statementYear.value = state.statementYear;
@@ -5330,7 +5432,8 @@
           showCardSummary("已載入");
         } else {
           hideNotice();
-          queueWorkspaceSave();
+          // Original files must enter storage immediately, even before OCR.
+          queueWorkspaceSave(true);
         }
       }
 
@@ -5481,38 +5584,57 @@
         window.setTimeout(() => URL.revokeObjectURL(url), 1500);
       }
 
-      function fallbackCopyAccountingMail() {
-        dom.accountingMailText.focus();
-        dom.accountingMailText.select();
+      function fallbackCopyAccountingMail(text) {
+        const temporary = document.createElement("textarea");
+        temporary.value = text;
+        temporary.style.position = "fixed";
+        temporary.style.opacity = "0";
+        document.body.appendChild(temporary);
         try {
+          temporary.focus();
+          temporary.select();
           return Boolean(document.execCommand?.("copy"));
         } catch {
           return false;
+        } finally {
+          temporary.remove();
         }
       }
 
       function generateAccountingMail() {
-        const physicalCount = state.rows.filter((row) => row.physicalInvoice).length;
-        if (!physicalCount) {
-          toast("請先標記實體發票");
+        if (state.busy || state.attachmentProcessing || state.exportProcessing) {
+          toast("請等目前的處理完成，再生成信件");
+          return "";
+        }
+        const body = buildAccountingMail();
+        if (!body) {
+          toast(state.accountingMailMode === "physical" ? "請先標記實體發票" : "請先載入報帳明細");
           return "";
         }
         state.accountingMailSignature = accountingMailSignature();
-        state.accountingMailText = buildAccountingMail();
+        state.accountingMailSubject = buildAccountingMailSubject();
+        state.accountingMailText = body;
         renderAccountingMail();
-        toast("信件已生成");
+        persistState(true);
+        toast("信件草稿已生成；尚未寄送");
         return state.accountingMailText;
       }
 
+      function updateAccountingMailDraft() {
+        if (state.busy || state.attachmentProcessing || state.exportProcessing) return;
+        state.accountingMailSubject = dom.accountingMailSubject.value;
+        state.accountingMailText = dom.accountingMailText.value;
+        renderAccountingMail();
+        persistState();
+      }
+
       async function copyAccountingMail() {
-        if (
-          !state.accountingMailText ||
-          state.accountingMailSignature !== accountingMailSignature()
-        ) {
-          toast("請先按「生成信件」");
+        if (state.busy || state.attachmentProcessing || state.exportProcessing) return;
+        if (!accountingMailIsCurrent()) {
+          toast("請先核對並生成最新信件草稿");
           return;
         }
-        const text = state.accountingMailText;
+        const text = `主旨：${state.accountingMailSubject}\n\n${state.accountingMailText}`;
         let copied = false;
         try {
           if (navigator.clipboard?.writeText) {
@@ -5522,8 +5644,54 @@
         } catch {
           copied = false;
         }
-        if (!copied) copied = fallbackCopyAccountingMail();
-        toast(copied ? "給會計的通知已複製" : "文字已選取，請按 ⌘C 複製");
+        if (!copied) copied = fallbackCopyAccountingMail(text);
+        toast(copied ? "主旨與信件正文已複製；附件需另行加入" : "自動複製失敗，請手動選取主旨與正文複製");
+      }
+
+      function mailUtf8Base64(value) {
+        let binary = "";
+        for (const byte of new TextEncoder().encode(value)) binary += String.fromCharCode(byte);
+        return btoa(binary);
+      }
+
+      function encodeMailSubject(value) {
+        // Do not permit user text to inject a new header. Fold encoded words on
+        // Unicode character boundaries, within RFC 2047's 75-character limit.
+        const subject = String(value).replace(/[\r\n\u0000-\u001f\u007f]+/g, " ").trim();
+        const chunks = [];
+        let chunk = "";
+        for (const character of subject) {
+          if (new TextEncoder().encode(chunk + character).length > 42) {
+            chunks.push(chunk);
+            chunk = "";
+          }
+          chunk += character;
+        }
+        if (chunk) chunks.push(chunk);
+        return chunks.map(part => `=?UTF-8?B?${mailUtf8Base64(part)}?=`).join("\r\n ");
+      }
+
+      function downloadAccountingMail() {
+        if (state.busy || state.attachmentProcessing || state.exportProcessing) return;
+        if (!accountingMailIsCurrent()) {
+          toast("請先核對並生成最新信件草稿");
+          return;
+        }
+        const body = state.accountingMailText.replace(/\r\n|\r|\n/g, "\r\n");
+        const encodedBody = mailUtf8Base64(body).match(/.{1,76}/g)?.join("\r\n") || "";
+        const eml = [
+          "X-Unsent: 1",
+          "MIME-Version: 1.0",
+          `Subject: ${encodeMailSubject(state.accountingMailSubject)}`,
+          "Content-Type: text/plain; charset=UTF-8",
+          "Content-Transfer-Encoding: base64",
+          "",
+          encodedBody,
+          ""
+        ].join("\r\n");
+        const filename = safeFilename(`公司卡${state.cardTail}_${exportMonth()}_${state.accountingMailMode === "physical" ? "實體發票通知" : "報帳通知"}_草稿.eml`);
+        downloadBlob(new Blob([eml], { type: "message/rfc822" }), filename);
+        toast("已下載信件草稿；未寄送、未夾附件，請在郵件程式核對後寄出");
       }
 
       function exportMonth() {
@@ -5957,7 +6125,7 @@
         });
         row.invoiceFound = true;
         render();
-        persistState();
+        persistState(true);
         toast(`已替「${row.description || "這筆消費"}」加入 ${files.length} 個附件`);
       }
 
@@ -6030,7 +6198,7 @@
         });
         renderReview();
         // Save the original files before starting any network-dependent OCR.
-        persistState();
+        persistState(true);
 
         let ocrWorker = null;
         let workerPromise = null;
@@ -6391,6 +6559,15 @@
       });
       dom.generateAccountingMailButton.addEventListener("click", generateAccountingMail);
       dom.copyAccountingMailButton.addEventListener("click", copyAccountingMail);
+      dom.downloadAccountingMailButton.addEventListener("click", downloadAccountingMail);
+      dom.accountingMailSubject.addEventListener("input", updateAccountingMailDraft);
+      dom.accountingMailText.addEventListener("input", updateAccountingMailDraft);
+      dom.accountingMailMode.addEventListener("change", () => {
+        if (state.busy || state.attachmentProcessing || state.exportProcessing) return;
+        state.accountingMailMode = dom.accountingMailMode.value === "physical" ? "physical" : "report";
+        renderAccountingMail();
+        persistState();
+      });
       dom.rawButton.addEventListener("click", () => {
         dom.rawText.value = state.rawText;
         dom.rawDialog.showModal();
@@ -6400,6 +6577,22 @@
       dom.reparseButton.addEventListener("click", reparseRawText);
       dom.rawDialog.addEventListener("click", (event) => {
         if (event.target === dom.rawDialog) dom.rawDialog.close();
+      });
+
+      // Dropping a local file outside a target must not replace this page with
+      // the browser's file preview. Do not intercept ordinary text/link drags.
+      ["dragover", "drop"].forEach((eventName) => {
+        window.addEventListener(eventName, (event) => {
+          const transfer = event.dataTransfer;
+          const hasFiles = transfer && (Array.from(transfer.types || []).includes("Files") || transfer.files?.length);
+          if (!hasFiles) return;
+          event.preventDefault();
+          if (eventName === "drop" && !event.target?.closest?.("#dropZone, #receiptDropZone")) {
+            dom.dropZone.classList.remove("is-dragging");
+            dom.receiptDropZone.classList.remove("is-dragging");
+            toast("檔案未加入；請拖到「放入帳單」或「附件複查區」，目前進度已保留");
+          }
+        });
       });
 
       window.addEventListener("beforeunload", (event) => {

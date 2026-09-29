@@ -64,6 +64,7 @@ const functionNames = [
   "normalizeOcrDigits",
   "normalizeText",
   "parseDatePrefix",
+  "findRecordCardTail",
   "findCardTail",
   "extractNumberTokens",
   "parseForeignReference",
@@ -79,7 +80,6 @@ const functionNames = [
 ];
 
 const parserSource = `
-  const CARD_TAIL = "2388";
   const CURRENCIES = [
     "TWD", "JPY", "USD", "EUR", "KRW", "SGD", "HKD", "CNY",
     "GBP", "AUD", "CAD", "THB", "VND", "MYR", "PHP", "NZD",

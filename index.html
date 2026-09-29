@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>公司卡報帳整理｜尾號 2388</title>
+  <title>公司卡報帳整理｜2388／7802</title>
   <style>
     :root {
       --navy-950: #081a33;
@@ -1645,6 +1645,27 @@
       display: none;
     }
 
+    .card-tail select {
+      min-height: 32px;
+      padding: 0 4px;
+      color: var(--navy-900);
+      background: transparent;
+      border: 0;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .card-tail select:disabled {
+      cursor: wait;
+      opacity: .55;
+    }
+
+    .cell-input.date-needs-review {
+      background: #fff3d4;
+      outline: 1px solid #e8b85b;
+      border-radius: 4px;
+    }
+
     .shell {
       width: min(1220px, 100%);
       padding: 34px 24px 120px;
@@ -2409,13 +2430,17 @@
       <h1>Card</h1>
     </div>
     <div class="top-actions">
-      <span class="card-tail" aria-label="目前只辨識信用卡尾號 2388">
+      <label class="card-tail" for="cardTailSelect">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/>
           <path d="M3 9h18" stroke="currentColor" stroke-width="1.8"/>
         </svg>
-        2388
-      </span>
+        報帳卡片
+        <select id="cardTailSelect" aria-label="切換報帳卡片尾號">
+          <option value="2388">尾號 2388</option>
+          <option value="7802">尾號 7802</option>
+        </select>
+      </label>
     </div>
   </header>
 
@@ -2484,7 +2509,7 @@
                   <path d="m6 12.5 4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </span>
-              <span>只保留尾號 <strong>2388</strong> 的實際刷卡消費</span>
+              <span>只保留所選尾號 <strong id="ruleCardTail">2388</strong> 的實際刷卡消費；可在右上角切換卡片</span>
             </li>
             <li class="rule-item">
               <span class="rule-check" aria-hidden="true">
@@ -2730,7 +2755,7 @@
       </button>
     </div>
     <div class="dialog-body">
-      <p class="dialog-copy">若圖片或 PDF 文字辨識不完整，可直接修正下方內容，再重新套用尾號 2388 的篩選規則。</p>
+      <p class="dialog-copy">若圖片或 PDF 文字辨識不完整，可直接修正下方內容，再重新套用尾號 <span id="rawCardTail">2388</span> 的篩選規則。</p>
       <textarea class="raw-text" id="rawText" spellcheck="false" placeholder="完成帳單辨識後，原始文字會顯示在這裡。"></textarea>
     </div>
     <div class="dialog-actions">
@@ -2746,7 +2771,8 @@
       "use strict";
 
       const CARD_TAIL = "2388";
-      const STORAGE_PREFIX = "company-card-expense-2388:v2:";
+      const CARD_TAILS = ["2388", "7802"];
+      const LEGACY_STORAGE_PREFIX = "company-card-expense-2388:v2:";
       const TESSERACT_SOURCES = [
         "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js",
         "https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js"
@@ -2902,6 +2928,9 @@
       const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
       const dom = {
+        cardTailSelect: $("#cardTailSelect"),
+        ruleCardTail: $("#ruleCardTail"),
+        rawCardTail: $("#rawCardTail"),
         dropZone: $("#dropZone"),
         fileInput: $("#fileInput"),
         previewImage: $("#previewImage"),
@@ -2961,11 +2990,13 @@
       };
 
       const state = {
+        cardTail: CARD_TAIL,
         files: [],
         fingerprint: "",
         rows: [],
         excluded: [],
         rawText: "",
+        statementRawText: "",
         filter: "all",
         search: "",
         showAdvancedColumns: false,
@@ -2974,6 +3005,7 @@
         attachments: [],
         attachmentTargetId: "",
         attachmentProcessing: false,
+        exportProcessing: false,
         accountingMailSignature: "",
         accountingMailText: "",
         statementYear: new Date().getFullYear()
@@ -2981,6 +3013,7 @@
 
       let toastTimer = 0;
       let persistTimer = 0;
+      const cardSessions = new Map();
 
       function iconForNotice(type) {
         if (type === "error") {
@@ -3142,21 +3175,33 @@
         return lines.filter((line) => Boolean(parseDatePrefix(line)));
       }
 
-      function findCardTail(rest) {
+      function findRecordCardTail(rest) {
         const candidates = [];
-        const pattern = /[0-9OoQIl|SsBb]{4}/g;
+        // The tail is its own column after a monetary amount. Do not match a
+        // merchant ID, a four-digit amount, or four digits inside a longer ID.
+        const pattern = /(?:^|[\s“”‘’\u0022\u0027])([0-9OoQIl|SsBb]{4})(?=\s|$)/g;
         let match;
         while ((match = pattern.exec(rest)) !== null) {
-          const normalized = normalizeOcrDigits(match[0]).replace(/\D/g, "");
-          if (normalized.length === 4 && hammingDistance(normalized, CARD_TAIL) <= 1) {
-            candidates.push({
-              index: match.index,
-              length: match[0].length,
-              normalized
-            });
-          }
+          const index = match.index + match[0].length - match[1].length;
+          const left = rest.slice(0, index).replace(/[\s“”‘’\u0022\u0027]+$/, "");
+          const amount = extractNumberTokens(left).at(-1);
+          if (!amount || amount.end !== left.length) continue;
+          const after = rest.slice(index + match[1].length).trim().replace(/^[\s“”‘’\u0022\u0027\u0060_|:;·\[\]]+/, "");
+          if (after && !/^(?:[A-Za-z]{2,3}\b|\d{1,2}[\/|]\d{1,2}\b)/.test(after)) continue;
+          candidates.push({
+            index,
+            length: match[1].length,
+            normalized: normalizeOcrDigits(match[1]).replace(/\D/g, "")
+          });
         }
         return candidates.at(-1) ?? null;
+      }
+
+      function findCardTail(rest, cardTail = "2388", allowFuzzy = true) {
+        const tail = findRecordCardTail(rest);
+        if (!tail) return null;
+        const distance = hammingDistance(tail.normalized, cardTail);
+        return distance === 0 || (allowFuzzy && distance <= 1) ? tail : null;
       }
 
       function extractNumberTokens(text) {
@@ -3181,7 +3226,7 @@
       }
 
       function parseForeignReference(text) {
-        const normalized = normalizeText(text).toUpperCase();
+        const normalized = normalizeText(text).toUpperCase().replace(/_/g, " ");
         const currencyPattern = CURRENCIES.join("|");
         let currency = "";
         let amount = "";
@@ -3204,17 +3249,17 @@
         );
 
         if (parentheticalAmountBefore) {
-          amount = cleanNumericInput(parentheticalAmountBefore[1]);
+          amount = parentheticalAmountBefore[1];
           currency = parentheticalAmountBefore[2].toUpperCase();
         } else if (parentheticalCurrencyBefore) {
           currency = parentheticalCurrencyBefore[1].toUpperCase();
-          amount = cleanNumericInput(parentheticalCurrencyBefore[2]);
+          amount = parentheticalCurrencyBefore[2];
         } else if (amountBefore) {
-          amount = cleanNumericInput(amountBefore[1]);
+          amount = amountBefore[1];
           currency = amountBefore[2].toUpperCase();
         } else if (currencyBefore) {
           currency = currencyBefore[1].toUpperCase();
-          amount = cleanNumericInput(currencyBefore[2]);
+          amount = currencyBefore[2];
         } else if (country && COUNTRY_CURRENCY[country]) {
           currency = COUNTRY_CURRENCY[country];
           const numberTokens = extractNumberTokens(normalized.replace(/\b\d{1,2}\/\d{1,2}\b/g, ""));
@@ -3222,10 +3267,15 @@
           if (plausible.length) amount = plausible[0].value;
         }
 
+        const amountText = String(amount);
+        const numericAmount = amountText === "" ? "" : cleanNumericInput(
+          amountText.replace(/\.(?=\d{3}\.)/g, ",")
+        );
         return {
           country,
           currency,
-          amount: Number.isFinite(Number(amount)) && amount !== "" ? Number(amount) : ""
+          amountText,
+          amount: numericAmount
         };
       }
 
@@ -3276,12 +3326,16 @@
           .sort((a, b) => b.score - a.score)[0].token;
       }
 
-      function parseRecord(record, sourcePage, sourceIndex, allowMissingTail = false) {
+      function parseRecord(record, sourcePage, sourceIndex, allowMissingTail = false, cardTail = "2388") {
         const dates = parseDatePrefix(record);
-        if (!dates) return null;
-
-        const rest = record.slice(dates.endIndex);
-        const tail = findCardTail(rest);
+        const rest = dates ? record.slice(dates.endIndex) : record;
+        const tail = findCardTail(rest, cardTail, Boolean(dates));
+        const explicitTail = findRecordCardTail(rest);
+        if (explicitTail && !tail) return null;
+        // Cropped statements can lose both left-hand date columns. Recover only
+        // rows with an exact card-tail column; the conversion date is not a
+        // substitute for a missing transaction or posting date.
+        if (!dates && !tail) return null;
         if (!tail && !allowMissingTail) return null;
 
         const left = tail ? rest.slice(0, tail.index).trim() : rest.trim();
@@ -3293,6 +3347,7 @@
         const description = normalizeText(rest.slice(0, amountToken.index))
           .replace(/^[\s:;,.|/_-]+|[\s:;,.|/_-]+$/g, "");
         if (!description || description.length < 2) return null;
+        if (/^(?:小計|合計|總計|本期應繳|公司卡.*(?:年費|累積))/.test(description)) return null;
 
         const afterTail = tail
           ? rest.slice(tail.index + tail.length)
@@ -3302,10 +3357,13 @@
         return {
           rawIndex: sourceIndex,
           sourcePage,
-          transactionMMDD: dates.transaction,
-          postingMMDD: dates.posting,
+          transactionMMDD: dates?.transaction || "",
+          postingMMDD: dates?.posting || "",
+          dateMissing: !dates,
+          cardTail,
           description,
-          amount: amountToken.value,
+          amount: /^現金\s*回/.test(description) && /[~～]\s*$/.test(rest.slice(0, amountToken.index))
+            ? -Math.abs(amountToken.value) : amountToken.value,
           country: foreign.country,
           currency: foreign.currency,
           foreignAmount: foreign.amount,
@@ -3314,14 +3372,14 @@
       }
 
       function findHeaderTail(line) {
-        if (parseDatePrefix(line)) return null;
+        if (parseDatePrefix(line) || findRecordCardTail(line)) return null;
         if (!/[*＊Xx]{2,}|持卡|卡號|RIBI|CARD/i.test(line)) return null;
         const tokens = normalizeText(line).match(/[0-9OoQIl|SsBb]{4}/g) || [];
         if (!tokens.length) return null;
         return normalizeOcrDigits(tokens.at(-1)).replace(/\D/g, "");
       }
 
-      function collectPageRecords(pageText, pageIndex) {
+      function collectPageRecords(pageText, pageIndex, cardTail = "2388") {
         const lines = String(pageText ?? "")
           .split(/\n+/)
           .map(normalizeText)
@@ -3334,27 +3392,34 @@
           const headerTail = findHeaderTail(line);
           if (headerTail) {
             targetSectionActive =
-              headerTail.length === 4 && hammingDistance(headerTail, CARD_TAIL) <= 1;
+              headerTail.length === 4 && hammingDistance(headerTail, cardTail) <= 1;
+            previousRecord = null;
             return;
           }
-          if (!parseDatePrefix(line)) return;
 
-          const strictRecord = parseRecord(line, pageIndex + 1, lineIndex, false);
+          const dates = parseDatePrefix(line);
+          const explicitTail = findRecordCardTail(dates ? line.slice(dates.endIndex) : line);
+          if (explicitTail && !findCardTail(dates ? line.slice(dates.endIndex) : line, cardTail, Boolean(dates))) {
+            targetSectionActive = false;
+            previousRecord = null;
+            return;
+          }
+          const strictRecord = parseRecord(line, pageIndex + 1, lineIndex, false, cardTail);
           if (strictRecord) {
             targetSectionActive = true;
             records.push(strictRecord);
             previousRecord = strictRecord;
             return;
           }
+          if (!dates) return;
           if (targetSectionActive) {
-            const tolerantRecord = parseRecord(line, pageIndex + 1, lineIndex, true);
+            const tolerantRecord = parseRecord(line, pageIndex + 1, lineIndex, true, cardTail);
             if (tolerantRecord) {
               records.push(tolerantRecord);
               previousRecord = tolerantRecord;
               return;
             }
 
-            const dates = parseDatePrefix(line);
             const description = normalizeText(line.slice(dates.endIndex));
             const cashbackWithoutAmount = /現金\s*回饋|CASH\s*BACK|CASHBACK|REBATE/i.test(description);
             const foreignReference = parseForeignReference(description);
@@ -3370,6 +3435,7 @@
                 sourcePage: pageIndex + 1,
                 transactionMMDD: dates.transaction,
                 postingMMDD: dates.posting,
+                cardTail,
                 description,
                 amount: feeWithoutAmount ? Math.round(previousRecord.amount * .015) : 0,
                 country: foreignReference.country,
@@ -3388,10 +3454,13 @@
 
       function looksLikeCashback(record) {
         return record.amount <= 0 ||
-          /現金\s*回饋|回饋\s*金|CASH\s*BACK|CASHBACK|REBATE|REWARD\s*CREDIT/i.test(record.description);
+          /現金\s*回[饋餽蝕]|回饋\s*金|CASH\s*BACK|CASHBACK|REBATE|REWARD\s*CREDIT/i.test(record.description);
       }
 
       function looksLikeFeeByText(record) {
+        if (/^[國圈圖]外[交安]易手續/.test(record.description) && parseForeignReference(record.description).currency) {
+          return true;
+        }
         return /國外.{0,5}(交易)?.{0,5}手續費|交易.{0,4}手續費|手續費|OVERSEAS.{0,10}(TXN|TRANSACTION|FEE)|FOREIGN.{0,10}(TXN|TRANSACTION|FEE)/i
           .test(record.description);
       }
@@ -3408,11 +3477,19 @@
         const reference = parseForeignReference(`${record.description} ${record.raw}`);
         const closeToBankRate = ratio >= .011 && ratio <= .021;
         const hasForeignReference = Boolean(reference.currency && reference.amount);
+        if (record.dateMissing || previous.dateMissing) {
+          const damagedFeeLabel = /^[國圈圖]外交易手/.test(record.description);
+          const hasFeeReference = /\([^)]*\)/.test(record.description) && hasForeignReference;
+          return record.sourcePage === previous.sourcePage &&
+            record.rawIndex === previous.rawIndex + 1 &&
+            (hasFeeReference || (damagedFeeLabel && Boolean(reference.currency))) && closeToBankRate;
+        }
         return closeToBankRate || (hasForeignReference && ratio < .03);
       }
 
       function inferYearDates(records, year) {
-        const months = records.map((record) => Number(record.transactionMMDD.slice(0, 2)));
+        const months = records.filter((record) => record.transactionMMDD)
+          .map((record) => Number(record.transactionMMDD.slice(0, 2)));
         const crossesYear = months.some((month) => month >= 10) && months.some((month) => month <= 3);
 
         return records.map((record) => {
@@ -3422,19 +3499,19 @@
           const postingYear = crossesYear && postingMonth >= 10 ? year - 1 : year;
           return {
             ...record,
-            transactionDate: `${transactionYear}-${record.transactionMMDD.replace("/", "-")}`,
-            postingDate: `${postingYear}-${record.postingMMDD.replace("/", "-")}`
+            transactionDate: record.transactionMMDD ? `${transactionYear}-${record.transactionMMDD.replace("/", "-")}` : "",
+            postingDate: record.postingMMDD ? `${postingYear}-${record.postingMMDD.replace("/", "-")}` : ""
           };
         });
       }
 
-      function parseStatementText(rawText, year = state.statementYear) {
+      function parseStatementText(rawText, year = new Date().getFullYear(), cardTail = "2388") {
         const joinedText = Array.isArray(rawText) ? rawText.join("\n") : String(rawText ?? "");
         const sourcePages = Array.isArray(rawText) ? rawText : [joinedText];
         const parsed = [];
 
         sourcePages.forEach((pageText, pageIndex) => {
-          parsed.push(...collectPageRecords(pageText, pageIndex));
+          parsed.push(...collectPageRecords(pageText, pageIndex, cardTail));
         });
 
         const rows = [];
@@ -3458,8 +3535,18 @@
                 previousIncluded.currency = reference.currency;
                 previousIncluded.country = reference.country || previousIncluded.country;
               }
-              if (reference.amount !== "") {
+              if (reference.amount !== "" && previousIncluded.foreignAmount === "") {
                 previousIncluded.foreignAmount = reference.amount;
+              } else if (reference.amount > 0 && previousIncluded.foreignAmount > 0) {
+                const original = parseForeignReference(previousIncluded.raw);
+                // A fee repeats the original currency amount. Restore a lost
+                // decimal only when both printed references contain all the
+                // same digits; a damaged or truncated reference cannot override it.
+                if (!original.amountText.includes(".") &&
+                    original.amountText.replace(/\D/g, "") === reference.amountText.replace(/\D/g, "") &&
+                    Math.abs(previousIncluded.foreignAmount - reference.amount * 100) < .001) {
+                  previousIncluded.foreignAmount = reference.amount;
+                }
               }
             }
             excluded.push({ ...record, reason: "fee" });
@@ -3472,7 +3559,7 @@
               record.currency,
               record.foreignAmount
             ].join("|");
-            const duplicate = rows.some((row) => row.__duplicateKey === duplicateKey);
+            const duplicate = !record.dateMissing && rows.some((row) => row.__duplicateKey === duplicateKey);
             if (!duplicate) {
               const included = {
                 ...record,
@@ -3513,35 +3600,84 @@
         return file?.type === "application/pdf" || /\.pdf$/i.test(file?.name || "");
       }
 
-      function storageKey() {
-        return state.fingerprint ? `${STORAGE_PREFIX}${state.fingerprint}` : "";
+      function storageKey(cardTail = state.cardTail) {
+        return state.fingerprint ? `company-card-expense-${cardTail}:v3:${state.fingerprint}` : "";
       }
 
-      function persistState() {
+      function rememberCardState() {
+        cardSessions.set(state.cardTail, {
+          rows: state.rows,
+          excluded: state.excluded,
+          rawText: state.rawText,
+          attachments: state.attachments,
+          attachmentTargetId: state.attachmentTargetId,
+          filter: state.filter,
+          search: state.search,
+          showAdvancedColumns: state.showAdvancedColumns,
+          accountingMailSignature: state.accountingMailSignature,
+          accountingMailText: state.accountingMailText,
+          statementYear: state.statementYear,
+          receiptProgress: dom.receiptProgress.textContent
+        });
+      }
+
+      function persistState(immediate = false) {
+        rememberCardState();
         clearTimeout(persistTimer);
-        persistTimer = window.setTimeout(() => {
-          const key = storageKey();
-          if (!key) return;
+        const key = storageKey();
+        if (!key) return;
+        // Capture the selected card now, before a later switch or async callback.
+        const serialized = JSON.stringify({
+          cardTail: state.cardTail,
+          rows: state.rows,
+          excluded: state.excluded,
+          rawText: state.rawText,
+          statementYear: state.statementYear,
+          savedAt: Date.now()
+        });
+        const save = () => {
           try {
-            localStorage.setItem(key, JSON.stringify({
-              rows: state.rows,
-              excluded: state.excluded,
-              rawText: state.rawText,
-              statementYear: state.statementYear,
-              savedAt: Date.now()
-            }));
+            localStorage.setItem(key, serialized);
           } catch {
             // Local persistence is helpful but never blocks the monthly workflow.
           }
-        }, 180);
+        };
+        if (immediate) save();
+        else persistTimer = window.setTimeout(save, 180);
+      }
+
+      function readSavedCard(cardTail) {
+        if (!state.fingerprint) return null;
+        const keys = [storageKey(cardTail)];
+        if (cardTail === "2388") keys.push(`${LEGACY_STORAGE_PREFIX}${state.fingerprint}`);
+        for (const key of keys) {
+          try {
+            const saved = JSON.parse(localStorage.getItem(key));
+            if (saved && Array.isArray(saved.rows)) return saved;
+          } catch {
+            // A damaged entry must not hide an older usable copy.
+          }
+        }
+        return null;
+      }
+
+      function resetCardState() {
+        Object.assign(state, {
+          rows: [], excluded: [], rawText: "", attachments: [], attachmentTargetId: "",
+          filter: "all", search: "", accountingMailSignature: "", accountingMailText: ""
+        });
+        dom.receiptProgress.textContent = "";
       }
 
       function restoreState() {
-        const key = storageKey();
-        if (!key) return false;
-        try {
-          const saved = JSON.parse(localStorage.getItem(key));
-          if (!saved || !Array.isArray(saved.rows) || !saved.rows.length) return false;
+        const cached = cardSessions.get(state.cardTail);
+        if (cached) {
+          const { receiptProgress, ...savedState } = cached;
+          Object.assign(state, savedState);
+          dom.receiptProgress.textContent = receiptProgress || "";
+        } else {
+          const saved = readSavedCard(state.cardTail);
+          if (!saved) return false;
           state.rows = saved.rows.map((row) => ({
             ...row,
             invoiceFound: Boolean(row.invoiceFound),
@@ -3550,11 +3686,120 @@
           state.excluded = Array.isArray(saved.excluded) ? saved.excluded : [];
           state.rawText = saved.rawText || "";
           state.statementYear = Number(saved.statementYear) || state.statementYear;
-          dom.statementYear.value = state.statementYear;
-          return true;
-        } catch {
+        }
+        state.statementRawText ||= state.rawText;
+        dom.statementYear.value = state.statementYear;
+        dom.searchInput.value = state.search;
+        return Boolean(state.rows.length || state.rawText || state.attachments.length);
+      }
+
+      function restoreSharedRawText() {
+        if (state.statementRawText) return state.statementRawText;
+        for (const cardTail of CARD_TAILS) {
+          const saved = readSavedCard(cardTail);
+          if (saved?.rawText) {
+            state.statementRawText = saved.rawText;
+            state.statementYear = Number(saved.statementYear) || state.statementYear;
+            break;
+          }
+        }
+        return state.statementRawText;
+      }
+
+      function parseSelectedCard(rawText) {
+        const parsed = parseStatementText(rawText, state.statementYear, state.cardTail);
+        state.rawText = rawText;
+        applyParsedCardResult(parsed);
+        return parsed;
+      }
+
+      function applyParsedCardResult(parsed) {
+        const previousBySource = new Map();
+        state.rows.forEach((row) => {
+          if (!row.raw || row.raw === "手動新增") return;
+          if (row.cardTail && row.cardTail !== state.cardTail) return;
+          const key = String(row.raw).trim();
+          const candidates = previousBySource.get(key) || [];
+          candidates.push(row);
+          previousBySource.set(key, candidates);
+        });
+        state.rows = parsed.rows.map((row) => {
+          const previous = previousBySource.get(String(row.raw || "").trim())?.shift();
+          // Exact source rows retain IDs and the user's edits. Never match by
+          // position: changing OCR lines can move a different purchase there.
+          return previous ? {
+            ...row, ...previous, cardTail: state.cardTail,
+            sourcePage: row.sourcePage, rawIndex: row.rawIndex
+          } : row;
+        }).concat(state.rows.filter((row) => row.raw === "手動新增"));
+        state.excluded = parsed.excluded;
+        const rowIds = new Set(state.rows.map((row) => row.id));
+        state.attachments.forEach((item) => {
+          if (!item.rowId || rowIds.has(item.rowId)) return;
+          item.rowId = "";
+          item.status = "unmatched";
+          item.matchScore = 0;
+          item.matchLevel = "unmatched";
+          item.matchReasons = ["重新辨識後原消費列已改變，請重新核對"];
+        });
+        if (!rowIds.has(state.attachmentTargetId)) state.attachmentTargetId = "";
+      }
+
+      function getMissingDateCount() {
+        return state.rows.filter((row) => !row.transactionDate).length;
+      }
+
+      function missingDateNotice() {
+        const count = getMissingDateCount();
+        return count ? ` 另有 <strong>${count} 筆消費日期待核對</strong>，請補齊表格中標示的日期。` : "";
+      }
+
+      function showCardSummary(prefix = "已切換") {
+        const counts = getCounts();
+        if (!state.rows.length) {
+          showNotice(
+            `尾號 <strong>${state.cardTail}</strong> 目前沒有可報帳消費；可切換其他卡片，或在「辨識原文」核對這張卡的完整區段。`,
+            "warning"
+          );
+          return;
+        }
+        showNotice(
+          `${prefix}尾號 <strong>${state.cardTail}</strong>：${state.rows.length} 筆消費、合計 <strong>${formatInteger(counts.total)} 元</strong>，已找到 ${counts.found} 張發票。` + missingDateNotice(),
+          getMissingDateCount() ? "warning" : "success"
+        );
+      }
+
+      function switchCardTail(cardTail) {
+        if (!CARD_TAILS.includes(cardTail)) return false;
+        if (state.busy || state.attachmentProcessing || state.exportProcessing) {
+          dom.cardTailSelect.value = state.cardTail;
           return false;
         }
+        if (cardTail === state.cardTail) return true;
+        persistState(true);
+        const sharedText = state.statementRawText || state.rawText || restoreSharedRawText();
+        state.cardTail = cardTail;
+        resetCardState();
+        const restored = restoreState();
+        if (!restored && sharedText) parseSelectedCard(sharedText);
+        dom.statementYear.value = state.statementYear;
+        dom.searchInput.value = state.search;
+        render();
+        if (state.rawText || state.rows.length) {
+          persistState(true);
+          setProgress(100, "已切換卡片，沿用辨識原文");
+          showCardSummary(restored ? "已載入" : "已切換");
+        } else {
+          hideNotice();
+        }
+        return true;
+      }
+
+      function releaseCardSessions() {
+        const urls = new Set(state.attachments.map((item) => item.url));
+        cardSessions.forEach((saved) => saved.attachments.forEach((item) => urls.add(item.url)));
+        urls.forEach((url) => URL.revokeObjectURL(url));
+        cardSessions.clear();
       }
 
       function getCounts() {
@@ -3903,7 +4148,7 @@
           }
         }
 
-        if (normalized.includes(CARD_TAIL)) score += 2;
+        if (normalized.includes(state.cardTail)) score += 2;
         return { score, reasons: [...new Set(reasons)] };
       }
 
@@ -3957,7 +4202,7 @@
         return [
           "您好，",
           "",
-          `以下 ${physicalRows.length} 筆報帳項目的發票為實體發票：`,
+          `公司卡尾號 ${state.cardTail}：以下 ${physicalRows.length} 筆報帳項目的發票為實體發票：`,
           "",
           ...items,
           "",
@@ -4085,10 +4330,10 @@
               </label>
             </td>
             <td>
-              <input class="cell-input" data-field="transactionDate" type="date" value="${escapeHtml(row.transactionDate)}" aria-label="消費日">
+              <input class="cell-input${row.transactionDate ? "" : " date-needs-review"}" data-field="transactionDate" type="date" value="${escapeHtml(row.transactionDate)}" aria-label="${row.transactionDate ? "消費日" : "消費日待核對，請填寫"}" title="${row.transactionDate ? "消費日" : "來源日期不完整，請核對後填寫"}">
             </td>
             <td class="advanced-column">
-              <input class="cell-input" data-field="postingDate" type="date" value="${escapeHtml(row.postingDate)}" aria-label="入帳日">
+              <input class="cell-input${row.postingDate ? "" : " date-needs-review"}" data-field="postingDate" type="date" value="${escapeHtml(row.postingDate)}" aria-label="${row.postingDate ? "入帳日" : "入帳日待核對，請填寫"}" title="${row.postingDate ? "入帳日" : "來源日期不完整，請核對後填寫"}">
             </td>
             <td>
               <input class="cell-input" data-field="description" type="text" value="${escapeHtml(row.description)}" aria-label="商店或說明">
@@ -4126,6 +4371,10 @@
       function render() {
         const counts = getCounts();
         const filteredRows = getFilteredRows();
+        dom.cardTailSelect.value = state.cardTail;
+        dom.ruleCardTail.textContent = state.cardTail;
+        dom.rawCardTail.textContent = state.cardTail;
+        document.title = `公司卡報帳整理｜尾號 ${state.cardTail}`;
         dom.transactionCount.textContent = state.rows.length;
         dom.totalAmount.textContent = formatInteger(counts.total);
         dom.invoiceProgress.textContent = `${counts.found} / ${state.rows.length}`;
@@ -4143,12 +4392,14 @@
         dom.advancedColumnsToggle.checked = state.showAdvancedColumns;
         dom.workspace.classList.toggle("is-visible", state.rows.length > 0);
         dom.exportActions.classList.toggle("is-visible", state.rows.length > 0);
-        dom.excelExportButton.disabled = state.rows.length === 0 || state.busy;
+        dom.excelExportButton.disabled = state.rows.length === 0 || state.busy || state.exportProcessing;
         dom.exportButton.disabled =
           state.rows.length === 0 ||
           state.attachments.length === 0 ||
           state.busy ||
+          state.exportProcessing ||
           state.attachmentProcessing;
+        updateCardControls();
 
         dom.checkAll.checked = state.rows.length > 0 && counts.found === state.rows.length;
         dom.checkAll.indeterminate = counts.found > 0 && counts.found < state.rows.length;
@@ -4171,16 +4422,27 @@
 
       function setBusy(isBusy) {
         state.busy = isBusy;
-        dom.recognizeButton.disabled = isBusy || state.files.length === 0;
-        dom.changeFileButton.disabled = isBusy;
-        dom.statementYear.disabled = isBusy;
-        dom.excelExportButton.disabled = isBusy || state.rows.length === 0;
+        updateCardControls();
+        dom.excelExportButton.disabled = isBusy || state.exportProcessing || state.rows.length === 0;
         dom.exportButton.disabled =
           isBusy ||
+          state.exportProcessing ||
           state.attachmentProcessing ||
           state.rows.length === 0 ||
           state.attachments.length === 0;
         dom.recognizeButton.lastChild.textContent = isBusy ? " 辨識中…" : " 開始辨識";
+      }
+
+      function updateCardControls() {
+        const locked = state.busy || state.attachmentProcessing || state.exportProcessing;
+        dom.cardTailSelect.disabled = locked;
+        dom.recognizeButton.disabled = locked || state.files.length === 0;
+        dom.changeFileButton.disabled = locked;
+        dom.statementYear.disabled = locked;
+        dom.fileInput.disabled = locked;
+        dom.receiptPickButton.disabled = locked || !state.rows.length;
+        dom.rawButton.disabled = locked;
+        dom.reparseButton.disabled = locked;
       }
 
       async function loadScriptFromSources(globalName, sources) {
@@ -4257,14 +4519,29 @@
         }).promise;
       }
 
-      async function renderPdfPage(pdf, pageNumber, scale = 2.5) {
+      async function renderPdfPage(pdf, pageNumber, scale = 4, forStatementOCR = false) {
         const page = await pdf.getPage(pageNumber);
         const viewport = page.getViewport({ scale });
         const canvas = document.createElement("canvas");
         canvas.width = Math.ceil(viewport.width);
         canvas.height = Math.ceil(viewport.height);
         const context = canvas.getContext("2d", { alpha: false });
-        await page.render({ canvasContext: context, viewport }).promise;
+        if (forStatementOCR) {
+          // PDF.js otherwise chooses scan interpolation from the screen's DPR.
+          // Keep OCR pixels consistent on standard and Retina displays, without
+          // changing the page, previews, or receipt rendering globally.
+          context.imageSmoothingEnabled = true;
+          Object.defineProperty(context, "imageSmoothingEnabled", {
+            configurable: true,
+            get: () => true,
+            set: () => {}
+          });
+        }
+        try {
+          await page.render({ canvasContext: context, viewport }).promise;
+        } finally {
+          if (forStatementOCR) delete context.imageSmoothingEnabled;
+        }
         return canvas;
       }
 
@@ -4279,8 +4556,53 @@
         return labels[status] || "辨識帳單";
       }
 
+      function recognitionBands(width, height) {
+        const count = Math.max(1, Math.ceil(height / Math.max(700, width * .4)));
+        const overlap = Math.max(40, Math.round(height * .025));
+        return Array.from({ length: count }, (_, index) => {
+          const coreTop = Math.round(height * index / count);
+          const coreBottom = Math.round(height * (index + 1) / count);
+          return {
+            coreTop, coreBottom,
+            top: Math.max(0, coreTop - overlap),
+            bottom: Math.min(height, coreBottom + overlap)
+          };
+        });
+      }
+
+      function textFromRecognitionBand(lines, band) {
+        return lines.filter((line) => {
+          const center = band.top + (line.bbox.y0 + line.bbox.y1) / 2;
+          return center >= band.coreTop && center < band.coreBottom;
+        }).map((line) => line.text.trim()).filter(Boolean).join("\n");
+      }
+
+      async function recognizeStatementCanvas(worker, canvas, onBandStart = () => {}) {
+        if (!(canvas instanceof HTMLCanvasElement)) {
+          onBandStart(0, 1);
+          const result = await worker.recognize(canvas);
+          return result.data.text || "";
+        }
+        // Short overlapping strips keep a long table's rows aligned. Each line
+        // belongs to exactly one core strip, including near crop boundaries.
+        const texts = [];
+        const bands = recognitionBands(canvas.width, canvas.height);
+        for (const [index, band] of bands.entries()) {
+          onBandStart(index, bands.length);
+          const crop = document.createElement("canvas");
+          crop.width = canvas.width;
+          crop.height = band.bottom - band.top;
+          crop.getContext("2d").drawImage(canvas, 0, band.top, canvas.width, crop.height,
+            0, 0, crop.width, crop.height);
+          const result = await worker.recognize(crop);
+          texts.push(textFromRecognitionBand(result.data.lines || [], band));
+          crop.width = crop.height = 0;
+        }
+        return texts.filter(Boolean).join("\n");
+      }
+
       async function runOCR() {
-        if (!state.files.length || state.busy) return;
+        if (!state.files.length || state.busy || state.attachmentProcessing || state.exportProcessing) return;
         hideNotice();
         setBusy(true);
         setProgress(2, "準備帳單");
@@ -4310,18 +4632,24 @@
 
           const texts = [];
           let currentPageIndex = 0;
+          let currentBandIndex = 0;
+          let currentBandCount = 1;
 
-          worker = await Tesseract.createWorker(["chi_tra", "eng"], Tesseract.OEM.LSTM_ONLY, {
-            workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
-            corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1",
-            langPath: "https://tessdata.projectnaptha.com/4.0.0",
-            logger(message) {
-              const localProgress = Number(message.progress || 0);
-              const base = (currentPageIndex / pages.length) * 100;
-              const span = 100 / pages.length;
-              const overall = base + localProgress * span;
-              setProgress(Math.min(97, overall), statusLabel(message.status));
-            }
+          worker = await new Promise((resolve, reject) => {
+            Tesseract.createWorker(["chi_tra", "eng"], Tesseract.OEM.LSTM_ONLY, {
+              workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
+              corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1",
+              // Use Tesseract's smaller LSTM language data from its default CDN.
+              // Language-only cache keys would otherwise reuse the older model.
+              cachePath: "card-statement-lstm-v1",
+              errorHandler: reject,
+              logger(message) {
+                const localProgress = Number(message.progress || 0);
+                const pageProgress = (currentBandIndex + localProgress) / currentBandCount;
+                const overall = (currentPageIndex + pageProgress) / pages.length * 100;
+                setProgress(Math.min(97, overall), statusLabel(message.status));
+              }
+            }).then(resolve, reject);
           });
 
           await worker.setParameters({
@@ -4337,22 +4665,24 @@
               `準備第 ${currentPageIndex + 1} / ${pages.length} 頁`
             );
             const canvas = source.pdf
-              ? await renderPdfPage(source.pdf, source.pageNumber)
+              ? await renderPdfPage(source.pdf, source.pageNumber, 4, true)
               : await prepareImage(source.file);
-            const result = await worker.recognize(canvas);
-            texts.push(result.data.text || "");
+            texts.push(await recognizeStatementCanvas(worker, canvas, (index, count) => {
+              currentBandIndex = index;
+              currentBandCount = count;
+            }));
           }
 
           state.rawText = texts.join("\n\n===== 下一頁 =====\n\n");
-          const parsed = parseStatementText(texts, state.statementYear);
-          state.rows = parsed.rows;
-          state.excluded = parsed.excluded;
+          state.statementRawText = state.rawText;
+          const parsed = parseStatementText(texts, state.statementYear, state.cardTail);
+          applyParsedCardResult(parsed);
           setProgress(100, "辨識完成");
 
           if (!state.rows.length) {
             render();
             showNotice(
-              "沒有抓到尾號 <strong>2388</strong> 的消費。請確認掃描或照片清楚且包含完整卡片區段；也可開啟「辨識原文」手動修正後重套規則。",
+              `沒有抓到尾號 <strong>${state.cardTail}</strong> 的消費。請確認目前選取的卡號及帳單區段；也可開啟「辨識原文」手動修正後重套規則。`,
               "error"
             );
             dom.rawText.value = state.rawText;
@@ -4362,7 +4692,8 @@
             const counts = getCounts();
             showNotice(
               `辨識完成：保留 <strong>${state.rows.length} 筆</strong>實際消費、合計 <strong>${formatInteger(counts.total)} 元</strong>；` +
-              `已排除國外交易手續費 ${counts.fees.length} 筆與現金回饋 ${counts.cashback.length} 筆。`
+              `已排除國外交易手續費 ${counts.fees.length} 筆與現金回饋 ${counts.cashback.length} 筆。` + missingDateNotice(),
+              getMissingDateCount() ? "warning" : "success"
             );
             persistState();
           }
@@ -4435,6 +4766,7 @@
       }
 
       function selectFiles(fileList) {
+        if (state.busy || state.attachmentProcessing || state.exportProcessing) return;
         const files = [...fileList].filter((file) =>
           /^(image\/jpeg|image\/png|image\/webp|application\/pdf)$/i.test(file.type) ||
           /\.(jpe?g|png|webp|pdf)$/i.test(file.name)
@@ -4444,16 +4776,17 @@
           return;
         }
 
+        const fingerprint = buildFingerprint(files);
+        if (fingerprint === state.fingerprint) {
+          toast("這份帳單已載入，保留目前的整理進度與附件");
+          return;
+        }
+        persistState(true);
+        releaseCardSessions();
         state.files = files;
-        state.fingerprint = buildFingerprint(files);
-        state.attachments.forEach((item) => URL.revokeObjectURL(item.url));
-        state.attachments = [];
-        state.attachmentTargetId = "";
-        state.rows = [];
-        state.excluded = [];
-        state.rawText = "";
-        state.filter = "all";
-        state.search = "";
+        state.fingerprint = fingerprint;
+        state.statementRawText = "";
+        resetCardState();
         dom.searchInput.value = "";
 
         dom.dropZone.classList.add("has-file");
@@ -4473,10 +4806,14 @@
         if (restoreState()) {
           setProgress(100, "已載入上次進度");
           render();
-          const counts = getCounts();
-          showNotice(
-            `已載入這份帳單上次的整理進度：${state.rows.length} 筆消費、已找到 ${counts.found} 張發票。`
-          );
+          showCardSummary("已載入這份帳單上次的整理進度，");
+        } else if (restoreSharedRawText()) {
+          parseSelectedCard(state.statementRawText);
+          dom.statementYear.value = state.statementYear;
+          setProgress(100, "已沿用這份帳單的辨識原文");
+          render();
+          persistState(true);
+          showCardSummary("已載入");
         } else {
           hideNotice();
           window.setTimeout(runOCR, 180);
@@ -4518,6 +4855,10 @@
         }
         if (field === "currency") value = value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
         row[field] = value;
+        if (field === "transactionDate" || field === "postingDate") {
+          event.target.classList.toggle("date-needs-review", !value);
+          event.target.title = value ? (field === "transactionDate" ? "消費日" : "入帳日") : "來源日期不完整，請核對後填寫";
+        }
         persistState();
         updateSummaryOnly();
         renderReview();
@@ -4671,9 +5012,8 @@
       }
 
       function exportMonth() {
-        const firstDate = state.rows.map((row) => row.transactionDate).filter(Boolean).sort()[0] ||
-          `${state.statementYear}-01-01`;
-        return firstDate.slice(0, 7);
+        const firstDate = state.rows.map((row) => row.transactionDate).filter(Boolean).sort()[0];
+        return firstDate ? firstDate.slice(0, 7) : `${state.statementYear}-日期待確認`;
       }
 
       function createExcelWorkbook(XLSX) {
@@ -4702,7 +5042,7 @@
             Number(row.amount || 0),
             row.currency || "",
             row.foreignAmount === "" ? "" : Number(row.foreignAmount),
-            CARD_TAIL,
+            state.cardTail,
             row.note || "",
             namedAttachments
               .filter((item) => item.rowId === row.id)
@@ -4712,7 +5052,7 @@
         ];
         const summaryRows = [
           ["公司卡報帳整理摘要", ""],
-          ["卡號末四碼", CARD_TAIL],
+          ["卡號末四碼", state.cardTail],
           ["帳單年度", state.statementYear],
           ["實際消費筆數", state.rows.length],
           ["實際報帳金額", counts.total],
@@ -4750,12 +5090,14 @@
         XLSX.utils.book_append_sheet(workbook, summarySheet, "核對摘要");
         return {
           workbook,
-          filename: safeFilename(`公司卡2388_${exportMonth()}_${Math.round(counts.total)}元`) + ".xlsx"
+          filename: safeFilename(`公司卡${state.cardTail}_${exportMonth()}_${Math.round(counts.total)}元`) + ".xlsx"
         };
       }
 
       async function downloadExcel() {
-        if (!state.rows.length) return;
+        if (!state.rows.length || state.busy || state.attachmentProcessing || state.exportProcessing) return;
+        state.exportProcessing = true;
+        updateCardControls();
         dom.excelExportButton.disabled = true;
         dom.excelExportButton.textContent = "產生 Excel…";
         try {
@@ -4777,21 +5119,26 @@
           console.error(error);
           showNotice("Excel 元件載入失敗，請確認目前有網路後再按一次「下載 Excel」。", "error");
         } finally {
+          state.exportProcessing = false;
+          updateCardControls();
           dom.excelExportButton.disabled = state.rows.length === 0 || state.busy;
           dom.excelExportButton.textContent = "下載 Excel";
         }
       }
 
       async function exportReceiptZip() {
+        if (state.busy || state.attachmentProcessing || state.exportProcessing) return;
         if (!state.attachments.length) {
           toast("目前還沒有發票附件");
           return;
         }
+        state.exportProcessing = true;
+        updateCardControls();
         dom.exportButton.disabled = true;
         try {
           const JSZip = await loadScriptFromSources("JSZip", JSZIP_SOURCES);
           const namedAttachments = buildAttachmentNames();
-          const zipFilename = safeFilename(`公司卡2388_${exportMonth()}_發票附件`) + ".zip";
+          const zipFilename = safeFilename(`公司卡${state.cardTail}_${exportMonth()}_發票附件`) + ".zip";
           const zip = new JSZip();
           namedAttachments.forEach((item) => zip.file(item.exportName, item.file));
           const blob = await zip.generateAsync(
@@ -4806,6 +5153,8 @@
           console.error(error);
           showNotice("ZIP 元件載入失敗，請確認目前有網路後再按一次「下載發票 ZIP」。", "error");
         } finally {
+          state.exportProcessing = false;
+          updateCardControls();
           dom.exportButton.disabled =
             state.rows.length === 0 ||
             state.attachments.length === 0 ||
@@ -4954,6 +5303,7 @@
       }
 
       function attachReceiptFilesManually(fileList, rowId) {
+        if (state.busy || state.attachmentProcessing || state.exportProcessing) return;
         const row = state.rows.find((item) => item.id === rowId);
         const files = filterReceiptFiles(fileList);
         if (!row) {
@@ -4982,6 +5332,7 @@
       }
 
       async function autoAttachReceiptFiles(fileList) {
+        if (state.busy || state.exportProcessing || !state.rows.length) return;
         if (state.attachmentProcessing) {
           toast("上一批附件還在配對中");
           return;
@@ -4993,6 +5344,7 @@
         }
 
         state.attachmentProcessing = true;
+        updateCardControls();
         dom.receiptDropZone.classList.add("is-processing");
         dom.receiptPickButton.disabled = true;
         dom.exportButton.disabled = true;
@@ -5052,6 +5404,7 @@
             }
           }
           state.attachmentProcessing = false;
+          updateCardControls();
           dom.receiptDropZone.classList.remove("is-processing");
           dom.receiptPickButton.disabled = false;
           dom.exportButton.disabled = state.rows.length === 0 || state.attachments.length === 0;
@@ -5075,30 +5428,33 @@
       }
 
       function reparseRawText() {
+        if (state.busy || state.attachmentProcessing || state.exportProcessing) return;
         const editedText = dom.rawText.value.trim();
         if (!editedText) {
           toast("辨識原文目前是空白的");
           return;
         }
-        const parsed = parseStatementText(editedText, state.statementYear);
+        const parsed = parseStatementText(editedText, state.statementYear, state.cardTail);
         if (!parsed.rows.length) {
-          toast("修正後仍找不到尾號 2388 的消費");
+          toast(`修正後仍找不到尾號 ${state.cardTail} 的消費`);
           return;
         }
         state.rawText = editedText;
-        state.rows = parsed.rows;
-        state.excluded = parsed.excluded;
+        state.statementRawText = editedText;
+        applyParsedCardResult(parsed);
         state.filter = "all";
         render();
         persistState();
         dom.rawDialog.close();
         const counts = getCounts();
         showNotice(
-          `已重新套用規則：保留 <strong>${state.rows.length} 筆</strong>實際消費、合計 <strong>${formatInteger(counts.total)} 元</strong>。`
+          `已重新套用尾號 ${state.cardTail} 規則：保留 <strong>${state.rows.length} 筆</strong>實際消費、合計 <strong>${formatInteger(counts.total)} 元</strong>。` + missingDateNotice(),
+          getMissingDateCount() ? "warning" : "success"
         );
       }
 
       function changeStatementYear() {
+        if (state.busy || state.attachmentProcessing || state.exportProcessing) return;
         const nextYear = Number(dom.statementYear.value);
         if (!Number.isInteger(nextYear) || nextYear < 2020 || nextYear > 2100) {
           dom.statementYear.value = state.statementYear;
@@ -5122,7 +5478,8 @@
       }
 
       function loadDemo() {
-        state.attachments.forEach((item) => URL.revokeObjectURL(item.url));
+        persistState(true);
+        releaseCardSessions();
         state.attachments = [];
         state.attachmentTargetId = "";
         const demoRows = [
@@ -5153,6 +5510,7 @@
           { reason: "cashback", amount: -100 }
         ];
         state.rawText = "示範模式：實際使用時，這裡會顯示 OCR 辨識原文。";
+        state.statementRawText = state.rawText;
         state.fingerprint = "";
         dom.dropZone.classList.add("has-file");
         dom.fileName.textContent = "demo-statement.jpg";
@@ -5197,6 +5555,7 @@
       dom.dropZone.addEventListener("drop", (event) => selectFiles(event.dataTransfer.files));
       dom.fileInput.addEventListener("change", () => selectFiles(dom.fileInput.files));
       dom.recognizeButton.addEventListener("click", runOCR);
+      dom.cardTailSelect.addEventListener("change", () => switchCardTail(dom.cardTailSelect.value));
       dom.changeFileButton.addEventListener("click", () => dom.fileInput.click());
       dom.statementYear.addEventListener("change", changeStatementYear);
       dom.searchInput.addEventListener("input", () => {
@@ -5300,8 +5659,9 @@
       });
 
       window.addEventListener("beforeunload", () => {
+        persistState(true);
         if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
-        state.attachments.forEach((item) => URL.revokeObjectURL(item.url));
+        releaseCardSessions();
       });
 
       dom.statementYear.value = state.statementYear;
@@ -5314,6 +5674,7 @@
         parseStatementText,
         splitTransactionRecords,
         getState: () => structuredClone({
+          cardTail: state.cardTail,
           rows: state.rows,
           excluded: state.excluded,
           rawText: state.rawText,
@@ -5330,6 +5691,7 @@
           }))
         }),
         loadDemo,
+        switchCardTail,
         attachFiles: (rowId, files) => attachReceiptFilesManually(files, rowId),
         autoMatchFiles: autoAttachReceiptFiles,
         scoreReceiptMatch,
@@ -5356,6 +5718,7 @@
         exportReceiptZip,
         exportPackage: exportReceiptZip
       };
+      window.CompanyCard = window.CompanyCard2388;
     })();
   </script>
 </body>

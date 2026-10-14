@@ -45,13 +45,10 @@ test('general accounting draft works with no physical receipts and covers the se
   const app = makeApp();
   setValue(app, '#searchInput', 'SAMPLE OFFICE');
   const body = app.api.generateAccountingMail();
-  assert.match(body, /公司卡尾號 2388/);
-  assert.match(body, /本期報帳共 3 筆.*10,500/);
-  assert.match(body, /SAMPLE OFFICE/);
-  assert.match(body, /SAMPLE TRAVEL/);
-  assert.match(body, /SAMPLE PAPER/);
-  assert.doesNotMatch(body, /OTHER CARD SHOP/);
-  assert.match(body, /電子附件 0 筆.*實體發票 0 筆.*缺少憑證 3 筆/);
+  assert.equal(app.elements.get('#accountingMailSubject').value, '2027/09/01到2027/09/05公司卡2388');
+  assert.match(body, /本期公司卡報帳明細及收據請見附件/);
+  assert.match(body, /另有3筆憑證待補，詳見報帳明細。/);
+  assert.doesNotMatch(body, /SAMPLE|OTHER CARD SHOP|10,500|憑證狀態/);
   assert.equal(app.elements.get('#copyAccountingMailButton').disabled, false);
   assert.equal(app.elements.get('#downloadAccountingMailButton').disabled, false);
 });
@@ -68,18 +65,14 @@ test('draft distinguishes electronic, physical and checked-but-unbacked rows and
   app.api.setAttachmentExcluded(excludedId, true);
   editRow(app, travel.id, 'note', '用途 <script>alert("x")</script> & 核對');
   const body = app.api.generateAccountingMail();
-  const officeFilename = app.api.getState().attachments.find(item => item.name === 'office.pdf').exportName;
-  assert.match(body, /電子附件 1 筆.*實體發票 1 筆.*缺少憑證 1 筆/);
-  assert.match(body, /已勾選找到，但尚未夾電子附件或標記實體/);
-  assert.ok(body.includes(officeFilename));
-  assert.match(body, /待確認附件.*1 份/);
-  assert.match(body, /pending/);
-  assert.doesNotMatch(body, /old-period/);
-  assert.match(body, /原幣 100 USD/);
-  assert.match(body, /用途 <script>/);
+  assert.match(body, /另有實體發票 1 筆/);
+  assert.match(body, /另有1筆憑證待補/);
+  assert.match(app.elements.get('#readinessStatus').textContent, /1 筆已勾找到但尚未夾電子附件或標記實體/);
+  assert.match(app.elements.get('#readinessStatus').textContent, /1 份附件待配對/);
+  assert.doesNotMatch(body, /\.pdf|pending|old-period|原幣|用途 <script>/);
   assert.equal(app.elements.get('#accountingMailText').value, body);
   assert.equal(app.elements.get('#accountingMailText').innerHTML, '', 'metadata is never interpolated as HTML');
-  assert.match(body, /草稿不含附件/);
+  assert.match(app.elements.get('#accountingMailStatus').textContent, /未夾入附件/);
 });
 
 test('physical mode preserves the existing focused notice without including electronic-only purchases', () => {
@@ -87,9 +80,8 @@ test('physical mode preserves the existing focused notice without including elec
   app.api.setPhysicalInvoice(app.api.getState().rows[2].id, true);
   setValue(app, '#accountingMailMode', 'physical', 'change');
   const body = app.api.generateAccountingMail();
-  assert.match(body, /實體發票共 1 筆.*900/);
-  assert.match(body, /SAMPLE PAPER/);
-  assert.doesNotMatch(body, /SAMPLE OFFICE|SAMPLE TRAVEL/);
+  assert.match(body, /本期公司卡有實體發票 1 筆/);
+  assert.doesNotMatch(body, /SAMPLE|900|憑證待補/);
   app.api.setPhysicalInvoice(app.api.getState().rows[2].id, false);
   assert.equal(app.elements.get('#generateAccountingMailButton').disabled, true);
   assert.equal(app.elements.get('#copyAccountingMailButton').disabled, true);
@@ -117,11 +109,12 @@ test('source edits retain custom draft text but block stale copy/download until 
   assert.equal(copied, '');
   assert.equal(blobs.length, 0);
   app.api.generateAccountingMail();
-  assert.match(app.api.getGeneratedAccountingMail(), /new source note/);
+  assert.doesNotMatch(app.api.getGeneratedAccountingMail(), /new source note|自訂內容/);
+  assert.equal(app.api.getState().rows[0].note, 'new source note');
   assert.equal(app.elements.get('#copyAccountingMailButton').disabled, false);
   await app.elements.get('#copyAccountingMailButton').click();
-  assert.match(copied, /主旨：公司卡/);
-  assert.match(copied, /new source note/);
+  assert.match(copied, /主旨：2027\/09\/01到2027\/09\/05公司卡2388/);
+  assert.ok(copied.endsWith(app.api.getGeneratedAccountingMail()));
 });
 
 test('attachment assignment, exclusion and mode changes each invalidate but never erase a draft', () => {
@@ -242,7 +235,7 @@ test('changing the statement year invalidates an undated draft without erasing i
     editRow(app, row.id, 'postingDate', '');
   }
   const body = app.api.generateAccountingMail();
-  assert.match(app.elements.get('#accountingMailSubject').value, /2027-日期待確認/);
+  assert.equal(app.elements.get('#accountingMailSubject').value, '公司卡2388（消費日期待確認）');
   setValue(app, '#statementYear', '2028', 'change');
   assert.equal(app.api.getGeneratedAccountingMail(), body);
   assert.equal(app.elements.get('#downloadAccountingMailButton').disabled, true);

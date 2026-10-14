@@ -3327,14 +3327,19 @@
 
       function renderReadiness() {
         const issues = [];
+        const evidence = receiptEvidenceSummary();
         const dates = getMissingDateCount();
         const unassigned = state.attachments.filter(item => !item.rowId && !item.excludedFromPeriod).length;
-        const unbacked = state.rows.filter(row => row.invoiceFound && !row.physicalInvoice && !attachmentCountForRow(row.id)).length;
+        const unbacked = evidence.missing.filter(row => row.invoiceFound).length;
         if (dates) issues.push(`${dates} 筆缺消費日期`);
         if (unassigned) issues.push(`${unassigned} 份附件待配對`);
+        if (evidence.missing.length) issues.push(`${evidence.missing.length} 筆憑證待補`);
         if (unbacked) issues.push(`${unbacked} 筆已勾找到但尚未夾電子附件或標記實體`);
-        dom.readinessStatus.textContent = issues.length ? `匯出前請核對：${issues.join("；")}。` : "";
-        dom.readinessStatus.hidden = issues.length === 0;
+        dom.readinessStatus.textContent = [
+          issues.length ? `匯出前請核對：${issues.join("；")}。` : "",
+          evidence.exempt.length ? `金箭代刷免追收據 ${evidence.exempt.length} 筆（不列缺件，費用保留）。` : ""
+        ].filter(Boolean).join(" ");
+        dom.readinessStatus.hidden = !dom.readinessStatus.textContent;
       }
 
       async function downloadWorkspaceBackup() {
@@ -4284,6 +4289,37 @@
         return state.attachments.filter((item) => item.rowId === rowId && !item.excludedFromPeriod).length;
       }
 
+      function receiptEvidenceForRow(row) {
+        // Evidence categories are disjoint; a paper receipt may also have a scan.
+        // The found checkbox is not proof, and an actual receipt takes priority
+        // over the narrowly approved no-receipt merchant exception.
+        if (row.physicalInvoice) return "physical";
+        if (attachmentCountForRow(row.id)) return "electronic";
+        const merchant = String(row.description || "").normalize("NFKC").replace(/\s/g, "");
+        return merchant === "金箭旅行社" || merchant === "金箭旅行社有限公司" ? "exempt" : "missing";
+      }
+
+      function receiptEvidenceSummary(rows = state.rows) {
+        const result = { electronic: [], physical: [], exempt: [], missing: [] };
+        rows.forEach(row => result[receiptEvidenceForRow(row)].push(row));
+        return result;
+      }
+
+      function receiptExemptionNote() {
+        return "代刷（總務訂購，本人無收據）";
+      }
+
+      function receiptEvidenceLabel(row) {
+        return { electronic: "電子附件", physical: "實體發票", exempt: "代刷免追收據", missing: "缺少憑證" }[receiptEvidenceForRow(row)];
+      }
+
+      function receiptReportNote(row) {
+        const note = String(row.note || "").trim();
+        if (receiptEvidenceForRow(row) !== "exempt" || note.includes(receiptExemptionNote())) return note;
+        // Include the standing exception in exports without changing user notes.
+        return [note, receiptExemptionNote()].filter(Boolean).join("；");
+      }
+
       function fileExtension(filename, mimeType = "") {
         const match = String(filename || "").toLowerCase().match(/\.([a-z0-9]{1,8})$/);
         if (match) return match[1] === "jpeg" ? "jpg" : match[1];
@@ -4694,77 +4730,50 @@
         return `${row.invoiceFound ? "✓ " : ""}${row.transactionDate}｜${row.description || "未填商店"}｜${amount}`;
       }
 
-      function accountingMailAmount(row) {
-        const twdAmount = `NT$${formatInteger(row.amount || 0)}`;
-        const hasForeign = row.foreignAmount !== "" &&
-          row.foreignAmount !== null &&
-          row.foreignAmount !== undefined &&
-          Number.isFinite(Number(row.foreignAmount)) &&
-          String(row.currency || "").toUpperCase() !== "TWD";
-        if (!hasForeign) return twdAmount;
-        return `${twdAmount}（原幣 ${formatDecimal(row.foreignAmount)} ${row.currency || "原幣"}）`;
-      }
-
       function buildAccountingMail() {
         const physicalOnly = state.accountingMailMode === "physical";
         const rows = physicalOnly ? state.rows.filter(row => row.physicalInvoice) : state.rows;
         if (!rows.length) return "";
-        const attachments = buildAttachmentNames().filter(item => !item.excludedFromPeriod);
-        const filesForRow = row => attachments.filter(item => item.rowId === row.id);
-        const physical = rows.filter(row => row.physicalInvoice).length;
-        // These are disjoint categories: a physical receipt may additionally have a scan.
-        const electronic = rows.filter(row => !row.physicalInvoice && filesForRow(row).length).length;
-        const missing = rows.length - physical - electronic;
-        const total = rows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
-        const items = rows.map((row, index) => {
-          const note = String(row.note || "").trim();
-          const description = String(row.description || "").trim();
-          const files = filesForRow(row);
-          const status = row.physicalInvoice ? "實體發票" : files.length ? "電子附件" :
-            row.invoiceFound ? "缺少憑證（已勾選找到，但尚未夾電子附件或標記實體）" : "缺少憑證";
-          const parts = [
-            `${index + 1}. ${slashDate(row.transactionDate) || "未填日期"}`,
-            description || "未填商店",
-            accountingMailAmount(row),
-            status
-          ];
-          if (note) parts.push(`備註：${note}`);
-          return [parts.join("｜"), ...files.map(item => `   可夾帶附件：${item.exportName}`)].join("\n");
-        });
-        const matchedFiles = attachments.filter(item => rows.some(row => row.id === item.rowId));
-        const pendingFiles = physicalOnly ? [] : attachments.filter(item => !state.rows.some(row => row.id === item.rowId));
+        const evidence = receiptEvidenceSummary(rows);
+        const notices = physicalOnly ? [] : [
+          ...(evidence.physical.length ? [`另有實體發票 ${evidence.physical.length} 筆，交付方式另行確認。`] : []),
+          ...evidence.exempt.map(row =>
+            `${slashDate(row.transactionDate) || "消費日期待確認"}｜金箭旅行社｜NT$${formatInteger(row.amount || 0)}｜${receiptExemptionNote()}`),
+          ...(evidence.missing.length ? [`另有${evidence.missing.length}筆憑證待補，詳見報帳明細。`] : [])
+        ];
         return [
           "您好，",
           "",
-          `公司卡尾號 ${state.cardTail}：${physicalOnly ? "以下項目另有實體發票，交付方式請另行確認。" : "本期報帳明細如下，請協助核對。"}`,
-          `${physicalOnly ? "實體發票" : "本期報帳"}共 ${rows.length} 筆，台幣金額合計 NT$${formatInteger(total)}。`,
-          `憑證狀態：電子附件 ${electronic} 筆、實體發票 ${physical} 筆、缺少憑證 ${missing} 筆。`,
-          `發票勾選找到：${rows.filter(row => row.invoiceFound).length} / ${rows.length}（勾選不代表附件齊全）。`,
-          "",
-          ...items,
-          "",
-          `可夾帶的本期已配對附件共 ${matchedFiles.length} 份（實體發票如另有掃描檔，也列於上方）。`,
-          ...(pendingFiles.length ? [
-            "",
-            `待確認附件 ${pendingFiles.length} 份（尚未配對，不作為已核對憑證）：`,
-            ...pendingFiles.map(item => `- ${item.exportName}`)
-          ] : []),
-          "",
-          "此草稿不含附件；請自行夾入報帳 Excel 與發票 ZIP，核對內容、收件人及實際附件後再寄出。",
+          physicalOnly ? `本期公司卡有實體發票 ${rows.length} 筆，交付方式另行確認。`
+            : "本期公司卡報帳明細及收據請見附件，再請協助核對。",
+          ...notices,
           "",
           "謝謝。"
         ].join("\n");
       }
 
+      function isCompleteConsumptionDate(value) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))) return false;
+        const date = new Date(`${value}T00:00:00Z`);
+        return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+      }
+
       function buildAccountingMailSubject() {
         const physicalOnly = state.accountingMailMode === "physical";
         const rows = physicalOnly ? state.rows.filter(row => row.physicalInvoice) : state.rows;
-        const total = rows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
-        return `公司卡 ${state.cardTail} ${physicalOnly ? "實體發票通知" : "報帳通知"}｜${exportMonth()}｜NT$${formatInteger(total)}`;
+        let subject = `公司卡${state.cardTail}（消費日期待確認）`;
+        if (rows.length && rows.every(row => isCompleteConsumptionDate(row.transactionDate))) {
+          const dates = rows.map(row => row.transactionDate).sort();
+          const first = slashDate(dates[0]);
+          const last = slashDate(dates[dates.length - 1]);
+          subject = `${first}${first === last ? "" : `到${last}`}公司卡${state.cardTail}`;
+        }
+        return subject + (physicalOnly ? " 實體發票" : "");
       }
 
       function accountingMailSignature() {
         return JSON.stringify({
+          templateVersion: 2,
           cardTail: state.cardTail,
           statementYear: state.statementYear,
           mode: state.accountingMailMode,
@@ -4809,7 +4818,7 @@
         dom.accountingMailSubject.value = state.accountingMailSubject;
         dom.accountingMailText.value = state.accountingMailText;
         dom.accountingMailStatus.textContent = stale
-          ? "明細、附件或信件模式已變更；草稿已過期，已保留你的文字。請核對並重新生成後，再複製或下載。"
+          ? "明細、附件、信件模式或範本已變更；草稿已過期，已保留你的文字。請核對並重新生成後，再複製或下載。"
           : hasDraft ? (current ? "草稿可繼續編輯；僅保存在此瀏覽器，尚未寄送，也未夾入附件。" : "請填寫主旨與正文後再複製或下載。")
             : count ? "請按「生成信件」建立目前卡片的草稿。" : "請先在上方表格標記實體發票。";
         dom.accountingMailStatus.classList.toggle("is-stale", stale);
@@ -5701,11 +5710,12 @@
 
       function createExcelWorkbook(XLSX) {
         const counts = getCounts();
-        const namedAttachments = buildAttachmentNames();
+        const evidence = receiptEvidenceSummary();
+        const namedAttachments = buildAttachmentNames().filter(item => !item.excludedFromPeriod);
         const detailRows = [
           [
-            "發票狀態",
-            "發票類型",
+            "發票勾選",
+            "憑證狀態",
             "消費日期",
             "入帳日期",
             "商店／說明",
@@ -5717,8 +5727,8 @@
             "附件檔名"
           ],
           ...state.rows.map((row) => [
-            row.invoiceFound ? "已找到" : "尚未找到",
-            row.physicalInvoice ? "實體發票" : (attachmentCountForRow(row.id) ? "電子附件" : ""),
+            row.invoiceFound ? "已勾找到" : "未勾找到",
+            receiptEvidenceLabel(row),
             slashDate(row.transactionDate),
             slashDate(row.postingDate),
             row.description,
@@ -5726,7 +5736,7 @@
             row.currency || "",
             row.foreignAmount === "" ? "" : Number(row.foreignAmount),
             state.cardTail,
-            row.note || "",
+            receiptReportNote(row),
             namedAttachments
               .filter((item) => item.rowId === row.id)
               .map((item) => item.exportName)
@@ -5739,9 +5749,11 @@
           ["帳單年度", state.statementYear],
           ["實際消費筆數", state.rows.length],
           ["實際報帳金額", counts.total],
-          ["發票已找到", counts.found],
-          ["實體發票", counts.physical],
-          ["尚缺發票", counts.missing],
+          ["發票勾選找到", counts.found],
+          ["電子附件（筆）", evidence.electronic.length],
+          ["實體發票", evidence.physical.length],
+          ["代刷免追收據", evidence.exempt.length],
+          ["缺少憑證", evidence.missing.length],
           ["附件數量", state.attachments.filter(item => !item.excludedFromPeriod).length],
           ["不列入本期附件（原檔保留）", state.attachments.filter(item => item.excludedFromPeriod).length],
           ["已排除國外交易手續費", `${counts.fees.length} 筆`],

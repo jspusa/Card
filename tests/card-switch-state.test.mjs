@@ -7,6 +7,7 @@ import { parseStatementText } from "./parser-harness.mjs";
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const fileSource = html.slice(html.indexOf("      function buildFingerprint("), html.indexOf("      function storageKey("));
 const cacheSource = html.slice(html.indexOf("      function storageKey("), html.indexOf("      function getCounts("));
+const evidenceSource = html.slice(html.indexOf("      function receiptEvidenceForRow("), html.indexOf("      function fileExtension("));
 const workbookSource = html.slice(html.indexOf("      function exportMonth("), html.indexOf("      async function downloadExcel("));
 const selectSource = html.slice(html.indexOf("      function selectFiles("), html.indexOf("      function findRow("));
 
@@ -52,7 +53,7 @@ function setup({ stored = [] } = {}) {
     buildAttachmentNames: () => [], attachmentCountForRow: () => 0,
     slashDate: (date) => date || "", safeFilename: (value) => value
   });
-  vm.runInContext(fileSource + cacheSource + workbookSource + selectSource, context);
+  vm.runInContext(fileSource + cacheSource + evidenceSource + workbookSource + selectSource, context);
   return { context, values, writes, pending };
 }
 

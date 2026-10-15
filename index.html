@@ -796,6 +796,17 @@
       text-align: right;
     }
 
+    .department-editor {
+      display: grid;
+      gap: 4px;
+    }
+
+    .department-hint {
+      margin: 0 8px;
+      color: var(--amber-700);
+      font-size: 11px;
+    }
+
     .empty-results {
       display: none;
       padding: 38px 20px;
@@ -2017,11 +2028,11 @@
     }
 
     table {
-      min-width: 1280px;
+      min-width: 1450px;
     }
 
     .table-scroll.show-advanced-columns table {
-      min-width: 1410px;
+      min-width: 1580px;
     }
 
     th,
@@ -2663,6 +2674,7 @@
             <col style="width:125px">
             <col style="width:105px">
             <col style="width:135px">
+            <col style="width:170px">
             <col style="width:230px">
             <col style="width:104px">
           </colgroup>
@@ -2681,6 +2693,7 @@
               <th style="text-align:right">台幣金額</th>
               <th>原幣幣別</th>
               <th style="text-align:right">原幣金額</th>
+              <th>使用部門</th>
               <th>備註</th>
               <th>夾檔</th>
             </tr>
@@ -3328,6 +3341,7 @@
       function renderReadiness() {
         const issues = [];
         const evidence = receiptEvidenceSummary();
+        const missingDepartments = state.rows.filter(departmentNeedsConfirmation).length;
         const dates = getMissingDateCount();
         const unassigned = state.attachments.filter(item => !item.rowId && !item.excludedFromPeriod).length;
         const unbacked = evidence.missing.filter(row => row.invoiceFound).length;
@@ -3335,6 +3349,7 @@
         if (unassigned) issues.push(`${unassigned} 份附件待配對`);
         if (evidence.missing.length) issues.push(`${evidence.missing.length} 筆憑證待補`);
         if (unbacked) issues.push(`${unbacked} 筆已勾找到但尚未夾電子附件或標記實體`);
+        if (missingDepartments) issues.push(`${missingDepartments} 筆 ChatGPT 公司版費用尚未填使用部門（可先匯出，請另行確認）`);
         dom.readinessStatus.textContent = [
           issues.length ? `匯出前請核對：${issues.join("；")}。` : "",
           evidence.exempt.length ? `金箭代刷免追收據 ${evidence.exempt.length} 筆（不列缺件，費用保留）。` : ""
@@ -3946,6 +3961,9 @@
                 invoiceFound: false,
                 physicalInvoice: false,
                 note: "",
+                department: "",
+                departmentMode: "preset",
+                departmentDraft: "",
                 __duplicateKey: duplicateKey,
                 __rawRef: record
               };
@@ -4213,7 +4231,7 @@
           if (state.filter === "found" && !row.invoiceFound) return false;
           if (state.filter === "missing" && row.invoiceFound) return false;
           if (!query) return true;
-          return `${row.description} ${row.note} ${row.currency}`
+          return `${row.description} ${row.note} ${row.currency} ${departmentValue(row)}`
             .toLocaleLowerCase("zh-Hant")
             .includes(query);
         });
@@ -4318,6 +4336,27 @@
         if (receiptEvidenceForRow(row) !== "exempt" || note.includes(receiptExemptionNote())) return note;
         // Include the standing exception in exports without changing user notes.
         return [note, receiptExemptionNote()].filter(Boolean).join("；");
+      }
+
+      function departmentValue(row) {
+        return typeof row.department === "string" ? row.department.trim() : "";
+      }
+
+      function departmentChoice(row) {
+        const value = departmentValue(row);
+        if (row.departmentMode === "custom") return "custom";
+        return ["", "電商", "行銷", "產品"].includes(value) ? value : "custom";
+      }
+
+      function departmentNeedsConfirmation(row) {
+        if (departmentValue(row)) return false;
+        // A bank merchant alone never identifies a company workspace or its
+        // department. Only the already-reviewed expense note establishes these
+        // two company charge types; nothing here assigns a department.
+        const merchant = String(row.description || "").normalize("NFKC").trim();
+        if (!/^(?:OPENAI|CHATGPT)(?:$|[\s*])/i.test(merchant)) return false;
+        const note = String(row.note || "").normalize("NFKC").replace(/\s/g, "");
+        return /^CHATGPT公司版(?:PREMIUM|BUSINESS|進階)?(?:追加(?:\d+|[一二三四五六七八九十]+)?席|工作區(?:點數)?(?:自動)?儲值)/i.test(note);
       }
 
       function fileExtension(filename, mimeType = "") {
@@ -4779,7 +4818,8 @@
           mode: state.accountingMailMode,
           rows: state.rows.map(row => [
             row.id, row.transactionDate, row.postingDate, row.description, row.amount,
-            row.currency, row.foreignAmount, row.note, row.invoiceFound, row.physicalInvoice
+            row.currency, row.foreignAmount, row.note, row.invoiceFound, row.physicalInvoice,
+            departmentValue(row), departmentChoice(row)
           ]),
           attachments: buildAttachmentNames().map(item => [
             item.id, item.rowId, item.exportName, Boolean(item.excludedFromPeriod), item.status
@@ -4898,6 +4938,7 @@
 
       function rowTemplate(row) {
         const attachmentCount = attachmentCountForRow(row.id);
+        const selectedDepartment = departmentChoice(row);
         return `
           <tr data-id="${escapeHtml(row.id)}" class="${row.invoiceFound ? "is-found" : "is-missing"} ${row.physicalInvoice ? "is-physical" : ""}">
             <td class="check-cell">
@@ -4929,6 +4970,16 @@
             </td>
             <td>
               <input class="cell-input amount" data-field="foreignAmount" data-number="decimal" inputmode="decimal" value="${escapeHtml(formatDecimal(row.foreignAmount))}" aria-label="原幣金額">
+            </td>
+            <td>
+              <div class="department-editor">
+                <select class="cell-input" data-field="departmentChoice" aria-label="使用部門：${escapeHtml(row.description)}">
+                  ${[["", "未選擇"], ["電商", "電商"], ["行銷", "行銷"], ["產品", "產品"], ["custom", "手動輸入"]].map(([value, label]) =>
+                    `<option value="${value}"${selectedDepartment === value ? " selected" : ""}>${label}</option>`).join("")}
+                </select>
+                <input class="cell-input" data-field="department" type="text" value="${escapeHtml(row.department || "")}" aria-label="手動輸入使用部門：${escapeHtml(row.description)}" placeholder="請填寫使用部門" ${selectedDepartment === "custom" ? "" : "hidden"}>
+                <span class="department-hint" ${departmentNeedsConfirmation(row) ? "" : "hidden"}>使用部門待確認</span>
+              </div>
             </td>
             <td>
               <input class="cell-input" data-field="note" type="text" value="${escapeHtml(row.note || "")}" placeholder="可填發票號碼或用途" aria-label="備註">
@@ -5030,7 +5081,7 @@
         dom.clearLocalButton.disabled = locked || !state.fingerprint;
         dom.addRowButton.disabled = locked;
         dom.checkAll.disabled = locked || !state.rows.length;
-        dom.tableBody.querySelectorAll("input, button").forEach(control => { control.disabled = locked; });
+        dom.tableBody.querySelectorAll("input, select, button").forEach(control => { control.disabled = locked; });
         dom.reviewGrid.querySelectorAll("select, button").forEach(control => { control.disabled = locked; });
         dom.reviewGrid.querySelectorAll(".attachment-row-select").forEach(control => {
           const id = control.closest?.("[data-attachment-id]")?.dataset.attachmentId;
@@ -5476,11 +5527,27 @@
         const field = event.target.dataset.field;
         if (!field) return;
         let value = event.target.value;
+        if (field === "departmentChoice") {
+          if (state.busy || state.attachmentProcessing || state.exportProcessing ||
+            !["", "電商", "行銷", "產品", "custom"].includes(value)) return;
+          if (departmentChoice(row) === "custom") row.departmentDraft = String(row.department || "");
+          row.departmentMode = value === "custom" ? "custom" : "preset";
+          row.department = value === "custom" ? String(row.departmentDraft || "") : value;
+          persistState();
+          render();
+          return;
+        }
+        if (field === "department") {
+          if (state.busy || state.attachmentProcessing || state.exportProcessing || departmentChoice(row) !== "custom") return;
+          row.departmentDraft = value;
+        }
         if (event.target.dataset.number) {
           value = value.trim() === "" && field === "foreignAmount" ? "" : cleanNumericInput(value);
         }
         if (field === "currency") value = value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
         row[field] = value;
+        const departmentHint = rowElement.querySelector?.(".department-hint");
+        if (departmentHint) departmentHint.hidden = !departmentNeedsConfirmation(row);
         if (field === "transactionDate" || field === "postingDate") {
           event.target.classList.toggle("date-needs-review", !value);
           event.target.title = value ? (field === "transactionDate" ? "消費日" : "入帳日") : "來源日期不完整，請核對後填寫";
@@ -5540,6 +5607,9 @@
           invoiceFound: false,
           physicalInvoice: false,
           note: "",
+          department: "",
+          departmentMode: "preset",
+          departmentDraft: "",
           raw: "手動新增",
           sourcePage: 0
         };
@@ -5724,7 +5794,8 @@
             "原幣金額",
             "卡號末四碼",
             "備註",
-            "附件檔名"
+            "附件檔名",
+            "使用部門"
           ],
           ...state.rows.map((row) => [
             row.invoiceFound ? "已勾找到" : "未勾找到",
@@ -5740,7 +5811,8 @@
             namedAttachments
               .filter((item) => item.rowId === row.id)
               .map((item) => item.exportName)
-              .join("、")
+              .join("、"),
+            departmentValue(row)
           ])
         ];
         const summaryRows = [
@@ -5754,6 +5826,7 @@
           ["實體發票", evidence.physical.length],
           ["代刷免追收據", evidence.exempt.length],
           ["缺少憑證", evidence.missing.length],
+          ["公司 ChatGPT 使用部門待確認", state.rows.filter(departmentNeedsConfirmation).length],
           ["附件數量", state.attachments.filter(item => !item.excludedFromPeriod).length],
           ["不列入本期附件（原檔保留）", state.attachments.filter(item => item.excludedFromPeriod).length],
           ["已排除國外交易手續費", `${counts.fees.length} 筆`],
@@ -5763,6 +5836,9 @@
         ];
 
         const detailSheet = XLSX.utils.aoa_to_sheet(detailRows);
+        // Explicit string cells preserve manual department names literally,
+        // including text beginning with =, +, - or @, without creating formulas.
+        state.rows.forEach((row, index) => { detailSheet[`L${index + 2}`] = { t: "s", v: departmentValue(row) }; });
         detailSheet["!cols"] = [
           { wch: 12 },
           { wch: 12 },
@@ -5774,9 +5850,10 @@
           { wch: 15 },
           { wch: 13 },
           { wch: 30 },
-          { wch: 54 }
+          { wch: 54 },
+          { wch: 20 }
         ];
-        detailSheet["!autofilter"] = { ref: `A1:K${detailRows.length}` };
+        detailSheet["!autofilter"] = { ref: `A1:L${detailRows.length}` };
 
         const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
         summarySheet["!cols"] = [{ wch: 28 }, { wch: 42 }];
